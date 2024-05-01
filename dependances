@@ -1,0 +1,21 @@
+import mysql.connector
+import datetime
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
+import cv2
+import os
+import pytesseract
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
+from experta import *
+import re
+import os
+import shutil
+import pytest
+- sudo pip install experta
+- sudo pip3 install --upgrade frozendict
+Deep 
+Google AI
+dateparser

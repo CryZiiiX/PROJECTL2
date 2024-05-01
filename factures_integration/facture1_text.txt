@@ -1,0 +1,41 @@
+FACTURE
+
+Joanna Binet
+48 Coubertin
+31400 Paris
+
+ENVOYÉ À
+Cendrillon Ayot
+
+46 Rue St Ferréol
+92360 Île-de-France
+
+FACTURE N° FR-001
+DATE 29/01/2019
+COMMANDE N° 1630/2019
+ÉCHÉANCE 24/05/2019
+
+FACTURÉ À
+Cendrillon Ayot
+69 rue Nations
+22000 Paris
+
+QTÉ DÉSIGNATION PRIX UNIT. HT MONTANT HT
+1 Grand brun escargot pour manger 100.00 100.00
+2 Petit marinière uniforme en bleu 15.00 30.00
+3 Facile à jouer accordéon 5.00 15.00
+
+Total HT 145.00
+TVA 20.0% 2.00
+TOTAL 174.00 €
+
+CONDITIONS ET MODALITÉS DE PAIEMENT
+Le paiement est dû dans 15 jours
+
+Caisse d'Epargne
+
+IBAN: FR12 1234 5678
+
+SWIFT/BIC: ABCDFRP1XXX
+
+Mesrei

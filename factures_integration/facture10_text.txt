@@ -1,0 +1,32 @@
+Facture n°20210001
+26 décembre 2021
+
+Émetteur
+Société: VOTRE SOCIÉTÉ
+SIREN: 552178639
+Numéro TVA: FR42552178639
+Contact: Votre nom
+Courriel: votre.mail@exemple.fr
+Téléphone: +33 7 00 11 22 33
+Adresse: 5 rue du Phare
+
+44000 Nantes
+
+Destinataire
+Société: VOTRE SOCIÉTÉ CLIENT
+Contact:  Référent client
+Courriel: mail.client@exemple.fr
+Adresse: 1 Parvis de la Loire
+95015 Paris
+
+Détail
+
+Type Description PTSCHDUNVAN Prix EE
+Produit Armoire 750 € 20% 900€
+Service Livraison, déménagement et assemblage de l'armoire 200 € 20% 140 €
+
+Total HT: 950 €
+Total TTC: 1040 €
+
+Conditions
+Conditions de paiement: 45 jours date de facture
