@@ -1,0 +1,43 @@
+Éditions Mirad:
+3230, avenue Ducharme
+Longueuil (Québec) J4J 5G6
+Téléphone : 123-456-7890
+
+Télécopie : 987-654-3210
+Courriel : mirada@mirada.qc.ca
+Site Web : www.mirada.qc.ca
+
+Facture
+
+Client : Librairie Richelieu
+275, rue du Faubourg, RC
+Longueuil (Québec) J4G 5T9
+Téléphone : 123-456-7891
+
+Numéro de la facture : 005449
+Date de facturation : 12 juillet 2023
+Votre bon de commande : B-492688
+
+Référence | Quantité | Titre du livre | Prix | Montant
+unitaire
+
+5497621584 | 1 | 91,40 $
+
+5498721685 | 26 | 25,50
+
+5498825741 | 10 | La pensée positive | 114,50 | 1 145,00
+
+Frais de livraison : 12,50 $
+
+Montant total : 344,65 $
+Rabais : 0,00
+
+TPS : 17,23 $
+TVQ : 0,00
+
+Total général : 361,88 $
+
+Modalités de paiement : Pour éviter des frais supplémentaires (8 % par année), veuillez acquitter
+la totalité de cette facture avant le 12 août 2023.
+Numéros d'enregistrement TPS : 6429916656
+
