@@ -1,0 +1,26 @@
+
+Facture
+
+À l'attention de M. Alain FLORO
+area
+91340 OLLAINVILLE
+
+N/Ref : Facture 2023-242 du 27/11/2023
+
+Bornes accès + configuration
+
+Cdts règlement : Comptant
+À réaler avant le : 04/12/23
+
+TVA non applicable - art 293 bis du CGI
+
+Désignation Qté PU} Montant Net
+[DIV] Bome d'accès wifi TP LINK + support + configuration 6,00 200,00 200,00 1 200,00
+IPRESTA01] Intervention a domicile (pose 1 bone avec connexion prises 1,00 170,00 170,00 170,00
+ethernet) + deplacement hors zone
+
+[MAT O4] Switch tplink ethernet gigabyte 8 ports (pour sortie box) 1,00 80,00 80,00 80,00
+
+Total € Net 1 450,00
+
+En votre aimable réglement.

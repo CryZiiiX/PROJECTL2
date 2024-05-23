@@ -1,0 +1,33 @@
+FACTURE
+
+Baskets
+et Style
+
+sitevraimentsuper.fr
+
+PIERRE DUFOUR
+01 23 67 89 45
+12 rue de la Paix, 75000 Paris
+
+Facture n°12345
+6 janvier 2025
+
+Item Quantity/Hours Unit Price Total
+Sneaker repair 1 $123 $123
+Sneaker cleaning 2 $123 $246
+Sneaker waterproofing 1 $123 $123
+
+Sous-total : 492 €
+TVA (0 %) : 0 €
+Total : 492€
+
+Informations de paiement
+Banque de Condorcet
+
+Nom du compte : Baskets et Style
+
+Numéro du compte : FR123456789945
+
+À payer avant le : 6 février 2025
+
+bonjour@sitevraimentsuper.fr | 12 rue Blaise Pascal, 75000 Paris | 01 23 45 67 89

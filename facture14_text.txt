@@ -1,0 +1,22 @@
+sal AVR
+
+Achat
+Vente
+Rénovation
+
+91340 OLLAINVILLE
+
+Ollainville le 19 Décembre 2023
+
+FACTURE 2023/015
+CHANTIER : Château du Plessis
+
+e Réfection peintures 3 600.00€
+°  Réfection des parquets 2 750.00€
+e _ Réfection de la cuisine 2 200.00€
++ _ Remplacement ballon d’eau chaude + groupe sécurité 1 200.00€
+° Nettoyage du chantier 400.00€
+
+L’ensemble HT 10 150.00€
+TVA 10% 1 015.00€
+PRIX TTC 11 165.00€
