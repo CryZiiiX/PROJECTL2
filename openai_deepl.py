@@ -3,87 +3,17 @@ from config import DEEPL_API_KEY1, DEEPL_API_KEY2, OPENAI_API_KEY
 from bdd_SQL import *
 from openai import OpenAI
 
-
-def bouton_valider_donnees_enregistre_facture(date_facture, emetteur, montant_original, devise_originale, montant_euros, categorie, test):
-    """
-    Enregistre les données de la facture dans la base de données.
-    arguments :
-        date_facture (str) : la date de la facture au format YYYY-MM-DD.
-        emetteur (str) : le nom de l'émetteur de la facture.
-        montant_original (float) : le montant de la facture dans la devise originale.
-        devise_originale (str) : la devise de la facture.
-        montant_euros (float) : le montant de la facture converti en euros.
-        categorie (str) : catégorie de la facture.
-        test (int) : valeur 1 si c'est un test, autrement non spécifié.
-    Retourne :
-        int: l'ID de la facture enregistrée.
-    """
-
-    # on récupère la connexion et le curseur
-    connection, cursor = connect_to_db()
-
-    # on récupère l'ID de la facture lors de son ajout à la BDD
-    id_facture = enregistrer_facture(connection, cursor, date_facture, emetteur, montant_original, devise_originale, montant_euros, categorie, test)
-
-    # ferme la connexion et le curseur
-    fermeture_bdd(connection, cursor)
-
-    # on renvoie l'ID pour éventuelle réutilisation (traduction)
-    return id_facture
-
-
-def nettoyage_texte(chemin_fichier_intermediaire_post_rectangle):                                    # PAS UTILISE PAR L'UI
-    """
-    Prépare un texte pour traduction en nettoyant le texte extrait par OCR.
-    Argument :
-        chemin_fichier_intermediaire_post_rectangle (str): Chemin vers le fichier texte intermédiaire
-        contenant l'extraction initiale de Tesseract avant post traitement
-        (tel qu'obtenu après tracé des rectangles)
-    Retourne :
-        str: Texte nettoyé prêt pour la traduction.
-    """
-    try:
-        # on extrait le texte du fichier
-        with open(chemin_fichier_intermediaire_post_rectangle, 'r', encoding='utf-8') as fichier:
-            texte = fichier.read()
-
-        # on appelle la fonction corriger_texte pour traiter le texte extrait
-        texte_corrige = corriger_texte_fake(texte)
-
-        # on retourne le texte traité
-        return texte_corrige
-
-    # gestion des erreurs
-    except FileNotFoundError:
-        print(f"Le fichier {chemin_fichier_intermediaire_post_rectangle} n'a pas été trouvé.")
-        return None
-    except Exception as e:
-        print(f"Une erreur est survenue lors de la lecture du fichier: {e}")
-        return None
-
-
 def nettoyage_texte_txt(texte):
-    """
-    Prépare un texte pour traduction en nettoyant le texte extrait par OCR.
-    Argument :
-        str: texte contenant l'extraction initiale de Tesseract avant post traitement
-        (tel qu'obtenu après tracé des rectangles)
-    Retourne :
-        str: Texte nettoyé prêt pour la traduction.
-    """
-    # on appelle la fonction corriger_texte pour traiter le texte extrait
-    texte_corrige = corriger_texte_fake(texte)
-
-    # on retourne le texte traité
-    return texte_corrige
-
-
-def corriger_texte(texte):
     """
     Utilise l'API de ChatGPT 3.5 turbo pour corriger le texte.
     :param texte: Le texte à corriger.
     :return: Le texte corrigé.
     """
+
+    # si le texte est vide ou très court, on renvoie tel quel
+    if not texte.strip() or len(texte) < 20:
+        return texte
+
     client = OpenAI(api_key=OPENAI_API_KEY)
 
     completion = client.chat.completions.create(
@@ -93,9 +23,15 @@ def corriger_texte(texte):
              "content": "You are an assistant with exceptional French editorial skills, "
                         "capable of identifying and correcting typographical errors in the text."},
             {"role": "user",
-             "content": f"Le texte suivant est issu d'une facture."
+             "content": f"Le texte est issu d'une facture."
                         f" Corrige les fautes de grammaires, les typos, les caractères isolés."
-                        f" Renvoie uniquement le texte corrigé dans ta réponse : {texte}"}
+                        f" Si le texte est trop court pour faire des corrections, renvoie-le à "
+                        f"l'identique sans rien corriger."
+                        f" Renvoie uniquement le texte corrigé dans ta réponse, sans aucun "
+                        f"commentaire ou ajout."
+                        f" Le texte est: {texte}"
+
+             }
         ]
     )
 
@@ -103,28 +39,13 @@ def corriger_texte(texte):
 
     return reponse
 
+
 def corriger_texte_fake(texte):
     """
     Pour ne pas épuiser les crédits openAI
     """
     reponse = texte
     return reponse
-
-
-def supprimer_etoiles(texte):
-    """
-    Supprime les caractères d'étoiles utilisés pour le formatage dans le texte.
-    argument :
-        texte (str): le texte à nettoyer.
-    Retourne :
-        str: texte nettoyé.
-    """
-
-    # on supprime les étoiles du texte
-    texte = texte.replace('**', '').replace('*', '')
-    # on renvoie le texte nettoyé
-    return texte
-
 
 def traduction_maj_bdd(texte_a_trad, langue_cible, id_facture):
     """
@@ -231,7 +152,7 @@ def traduire_texte_fake(texte, langue_cible):
     return texte  # on renvoie le texte d'origine
 
 
-def ecrire_dans_fichier(nom_fichier, texte, commentaire):
+def ecrire_dans_fichier(nom_fichier, texte):
     """
     Fonction pour écrire le texte traduit dans un fichier
     :param nom_fichier: Le nom du fichier de sortie.
@@ -239,6 +160,5 @@ def ecrire_dans_fichier(nom_fichier, texte, commentaire):
     :return: None
     """
     with open(nom_fichier, 'w', encoding='utf-8') as fichier:
-        fichier.write("Texte " + commentaire +":\n")
         fichier.write(texte + "\n\n\n")
 

@@ -4,67 +4,89 @@ import dateparser
 import re
 import os
 
-#source: v9
 
-    # Dictionnaire pour convertir les numéros de mois en noms français                             # AJOUTE COMME VARIABLE GLOBALE POUR POUVOIR L'UTILISER DANS L'UI
+# Dictionnaire pour convertir les numéros de mois en noms français
 month_names = {"01": "Janvier", "02": "Fevrier", "03": "Mars",
         "04": "Avril", "05": "Mai", "06": "Juin",
         "07": "Juillet", "08": "Aout", "09": "Septembre",
         "10": "Octobre", "11": "Novembre", "12": "Decembre"}
 
-# Crée le fichier trie accueillant les fichiers finaux et triés par année, mois et type de dépense          # 
+# Crée le fichier trie accueillant les fichiers finaux et triés par année, mois et type de dépense
 sort_folder = "trie_doc"  # nom du dossier de sortie
 if not os.path.exists(sort_folder):
     os.makedirs(sort_folder)  # crée le dossier s'il n'existe pas
 
 def get_categorie(content):
-    # Dictionnaire des règles avec expressions régulières pour chaque catégorie             # SI MODIFICATION, IL FAUT EGALEMENT MODIFIER liste_categorie_depense dans l'UI
+    # Dictionnaire des règles avec expressions régulières pour chaque catégorie
+    # SI MODIFICATION, IL FAUT EGALEMENT MODIFIER liste_categorie_depense dans l'UI + TAB5 Maxime
     categories = {
-        'Logement': r'\b(logement|loyer|appartement|maison|immobilier|caution|bail|habitation)\b',
-        'Transport': r'\b(transport|SNCF|RATP|train|bus|billet|avion|Air France|Ryanair|EasyJet|Transavia|voyage'
-                     r'|tramway|metro|covoiturage|voiture|Keolis|Transdev|Blablacar|CMA CGM|Corsica Ferries'
-                     r'|Corsair International|Air Caraïbes|French Bee|La Compagnie|Eurolines|Ouibus|Blablabus'
-                     r'|Lyon Turin Ferroviaire|Louis Dreyfus Armateurs|Compagnie du Ponant|ASL Airlines France)\b',
-        'Assurances': r'\b(assurance|AXA|Allianz|Groupama|Maif|Macif|assuré|couverture|Mutuelle Générale|Hiscox'
-                      r'|AXA Entreprises|Generali Professionnels|Assurances Agricoles|Groupama|Crédit Agricole Assurances'
-                      r'|SMACL Assurances|La Parisienne Assurances|Direct Assurance|Matmutassurance|couverture|police)\b',
-        'Santé': r'\b(santé|pharmacie|clinique|docteur|radio|consultation|hôpital|CHU|Santéclair|médicament|médicaments'
-                 r'|traitement|ordonnance|santé publique|AXA Santé|Allianz Santé|Harmonie Mutuelle|Mutuelle Générale'
-                 r'|MACIF Santé|MAIF Santé|Groupama Santé|AG2R La Mondiale|MGEN|April Santé)\b',
-        'Ameublement': r'\b(ameublement|IKEA|Maisons du Monde|Conforama|meuble|décoration|ameubler|décorer|Roche Bobois'
-                       r'|Maisons du Monde|Habitat|Gautier|Fly|Cinna|BoConcept ameublement|décor)\b',
-        'Téléphonie': r'\b(téléphonie|Orange|SFR|Free|Free Mobile|Bouygues Telecom|mobile|smartphone|ligne téléphonique'
-                      r'|La Poste Mobile|Coriolis Telecom|Prixtel|Red by SFR|Sosh|B&YOU|ligne téléphonique|ligne téléphone'
-                      r'|mobile|internet|fibre|fibre optique|ADSL|Go|Giga)\b',
-        'Prêt-à-porter': r'\b(prêt-à-porter|vêtement|Zara|H&M|Galeries Lafayette|Uniqlo|habillement|couture|jean|pantalon'
-                         r'|chemise|robe|jupon|sous-vêtement|pull|t-shirt|veste|costume|Levi\'s|Lacoste|The Kooples|Maje'
-                         r'|Promod|Etam|Celio|Kiabi|Bonobo|undiz|habillement|vêtement|tee-shirt|débardeur|pull|legging'
-                         r'|écharpe|brassière)\b',
-        'Alimentaire': r'\b(alimentaire|supermarché|Carrefour|ED|Casino|Lidl|Tesco|Aldi|Auchan|Monoprix|épicerie'
-                       r'|nourriture|Costco|Intermarché|Leclerc|Franprix|Super U|Leader Price|Géant Casino|Dia|Biocoop'
-                       r'|produits frais|fromage|viande|poisson|fruits)\b',
+        'Alimentaire': r'\b(alimentaire|supermarché|Carrefour|ED|Casino|Lidl|Tesco|Aldi|Auchan|'
+                       r'Monoprix|épicerie|nourriture|Costco|Intermarché|Leclerc|Franprix|'
+                       r'Super U|Leader Price|Géant Casino|Dia|Biocoop|produits frais|fromage|'
+                       r'viande|poisson|fruits)\b',
+        'Ameublement': r'\b(ameublement|IKEA|Maisons du Monde|Conforama|meuble|décoration|ameubler|'
+                       r'décorer|Roche Bobois|Maisons du Monde|Habitat|Gautier|Fly|Cinna|BoConcept '
+                       r'ameublement|décor)\b',
+        'Assurances': r'\b(assurance|AXA|Allianz|Groupama|Maif|Macif|assuré|couverture|Mutuelle '
+                      r'Générale|Hiscox|AXA Entreprises|Generali Professionnels|Assurances '
+                      r'Agricoles|Groupama|Crédit Agricole Assurances|SMACL Assurances|La Parisienne '
+                      r'Assurances|Direct Assurance|Matmutassurance|couverture|police)\b',
+        'Bar': r'\b(bar|verre de vin|pression|pinte|cocktail|happy hours|happy hour|shot|shots|bière|'
+               r'alcool|boisson|spiritueux|tapas|pub)\b',
+        'Bricolage': r'\b(bricolage|Castorama|Leroy Merlin|Brico Dépôt|outils|jardinage|peinture|'
+                     r'quincaillerie|matériaux de construction|scie|perceuse|martelage|clouage|'
+                     r'vissage|menuiserie)\b',
+        'Cosmétiques': r'\b(cosmétiques|Sephora|parfum|L\'Oréal|Nuxe|mascara|fond de teint|lèvre|beauté|'
+                       r'soin de la peau|crème|hydratant|maquillage|rouge à lèvres|blush|eyeliner|'
+                       r'palette|contouring|skincare)\b',
+        'Électronique': r'\b(électronique|Samsung|Apple|Sony|LG|Huawei|Iphone|iPad|tablette|ordinateur|'
+                        r'télévision|équipement électronique|gadget|caméra|console de jeux|Xbox|'
+                        r'PlayStation|Nintendo|smartwatch|GoPro|drone|enceinte|soundbar|casque audio|'
+                        r'écouteurs|wifi|tplink|routeur|giga|gigabyte)\b',
         'Frais bancaires': r'\b(frais bancaires|transaction|ATM|distributeur automatique|distributeur)\b',
-        'Électronique': r'\b(électronique|Samsung|Apple|Sony|LG|Huawei|Iphone|iPad|tablette|ordinateur|télévision'
-                        r'|équipement électronique|gadget|caméra|console de jeux|Xbox|PlayStation|Nintendo|smartwatch'
-                        r'|GoPro|drone|enceinte|soundbar|casque audio|écouteurs|wifi|tplink|routeur|giga|gigabyte)\b',
-        'Bricolage': r'\b(bricolage|Castorama|Leroy Merlin|Brico Dépôt|outils|jardinage|peinture|quincaillerie'
-                     r'|matériaux de construction|scie|perceuse|martelage|clouage|vissage|menuiserie)\b',
-        'Bar': r'\b(bar|verre de vin|pression|pinte|cocktail|happy hours|happy hour|shot|shots|bière|alcool|boisson'
-               r'|spiritueux|tapas|pub)\b',
-        'Restauration': r'\b(restauration|restaurant|McDonald\'s|Burger King|Subway|menu|entrée|plat|dessert|repas'
-                        r'|gastronomie|fast food|cuisine traditionnelle|cuisine locale|cantine|buffet|traiteur)\b',
-        'Travaux': r'\b(travaux|construction|main d\'oeuvre|matériel|réfection|matériaux|rénovation|maçonnerie|plomberie'
-                   r'|électricité|chantier|ouvrier|bâtiment|ingénieur|architecte|réforme|réhabilitation|isolation'
-                   r'|toiture|charpente|fondations|excavation)\b',
-        'Service': r'\b(service|nettoyage|réparation|entretien|taux horaire|prestation|service à domicile|à domicile'
-                   r'|artisan|technicien|professionnel|aide|ménage|plomberie|électricité|soutien)\b',
-        'Loisirs': r'\b(loisirs|cinéma|parc|Disneyland|Parc Astérix|divertissement|jeu|amusement|théâtre|spectacle'
-                   r'|représentation|festival|concert|expo|exposition|musée|attraction|manège)\b',
-        'Livres': r'\b(livres|bibliothèque|FNAC|librairie|livre|bande dessinée|manga|roman|lecture|dictionnaire'
-                  r'|publication|encyclopédie|nouvelle|essai|poésie|littérature|auteur|édition|éditeur)\b',
-        'Sport': r'\b(sport|gym|Decathlon|Nike|Adidas|tennis|sports|activité physique|fitness|running|muscu)\b',
-        'Cosmétiques': r'\b(cosmétiques|Sephora|parfum|L\'Oréal|Nuxe|mascara|fond de teint|lèvre|beauté|soin de la peau'
-                       r'|crème|hydratant|maquillage|rouge à lèvres|blush|eyeliner|palette|contouring|skincare)\b',    }
+        'Livres': r'\b(livres|bibliothèque|FNAC|librairie|livre|bande dessinée|manga|roman|lecture|'
+                  r'dictionnaire|publication|encyclopédie|BD|essai|poésie|littérature|auteur|'
+                  r'édition|éditeur)\b',
+        'Logement': r'\b(logement|loyer|appartement|maison|immobilier|caution|bail|habitation)\b',
+        'Loisirs': r'\b(loisirs|cinéma|parc|Disneyland|Parc Astérix|divertissement|jeu|amusement|'
+                   r'théâtre|spectacle|représentation|festival|concert|expo|exposition|musée|'
+                   r'attraction|manège)\b',
+        'Prêt-à-porter': r'\b(prêt-à-porter|vêtement|Zara|H&M|Galeries Lafayette|Uniqlo|habillement|'
+                         r'couture|jean|pantalon|chemise|robe|jupon|sous-vêtement|pull|t-shirt|'
+                         r'veste|costume|Levi\'s|Lacoste|The Kooples|Maje|Promod|Etam|Celio|Kiabi|'
+                         r'Bonobo|undiz|habillement|vêtement|tee-shirt|débardeur|pull|legging|'
+                         r'écharpe|brassière)\b',
+        'Restauration': r'\b(restauration|restaurant|McDonald\'s|Burger King|Subway|menu|entrée|plat|'
+                        r'dessert|repas|gastronomie|fast food|cuisine traditionnelle|cuisine locale|'
+                        r'cantine|buffet|traiteur)\b',
+        'Santé': r'\b(santé|pharmacie|clinique|docteur|radio|consultation|hôpital|CHU|Santéclair|'
+                 r'médicament|médicaments|traitement|ordonnance|santé publique|AXA Santé|Allianz '
+                 r'Santé|Harmonie Mutuelle|Mutuelle Générale|MACIF Santé|MAIF Santé|Groupama Santé|'
+                 r'AG2R La Mondiale|MGEN|April Santé)\b',
+        'Service': r'\b(service|réparation|entretien|taux horaire|prestation|service à domicile|'
+                   r'à domicile|artisan|technicien|professionnel|aide|ménage|plomberie|électricité|'
+                   r'soutien)\b',
+        'Services Publics': r'\b(consommation|électricité|gaz|EDF|Engie|GRDF|Veolia|Suez|Gaz de '
+                            r'France|ENEDIS|'
+                            r'Direct Energie|Total Direct Energie|Eau de Paris|Saur)\b',
+        'Sport': r'\b(sport|gym|Decathlon|Nike|Adidas|tennis|sports|activité physique|fitness|running|'
+                 r'muscu)\b',
+        'Téléphonie': r'\b(téléphonie|Orange|SFR|Free|Free Mobile|Bouygues Telecom|mobile|smartphone|'
+                      r'ligne téléphonique|La Poste Mobile|Coriolis Telecom|Prixtel|Red by SFR|Sosh|'
+                      r'B&YOU|ligne téléphonique|ligne téléphone|mobile|internet|fibre|fibre optique|'
+                      r'ADSL|Go|Giga)\b',
+        'Transport': r'\b(transportation|transports '
+                     r'publics|transport public|SNCF|RATP|train|bus|billet|avion|Air '
+                     r'France|Ryanair|EasyJet|Transavia|'
+                     r'voyage|tramway|metro|covoiturage|voiture|Keolis|Transdev|Blablacar|CMA CGM|'
+                     r'Corsica Ferries|Corsair International|Air Caraïbes|French Bee|La Compagnie|'
+                     r'Eurolines|Ouibus|Blablabus|Lyon Turin Ferroviaire|Louis Dreyfus Armateurs|'
+                     r'Compagnie du Ponant|ASL Airlines France)\b',
+        'Travaux': r'\b(travaux|construction|main d\'oeuvre|matériel|réfection|matériaux|rénovation|'
+                   r'maçonnerie|plomberie|électricité|chantier|ouvrier|bâtiment|ingénieur|architecte|'
+                   r'réforme|réhabilitation|isolation|toiture|charpente|fondations|excavation)\b',
+    }
+
 
     # Parcourir chaque catégorie pour trouver un match
     for category, regex in categories.items():
@@ -86,7 +108,8 @@ def extract_amount(content):
     
     ############## Premier pattern ##############
 
-    # Pattern spécifique pour le format "213,781.06" ou "21,781.06"( Pattern retrouvé dans le ($)) car je n'arrivais pas a géneraliser sans que ca ne genère d'erreur dans les autre patterns.
+    # Pattern spécifique pour le format "213,781.06" ou "21,781.06"( Pattern retrouvé dans le (
+    # $))  car je n'arrivais pas a géneraliser sans que ca ne genère d'erreur dans les autre patterns.
     specific_pattern = r"\b(?<!Sous-)TOTAL\s+DE\s+LA\s+FACTURE:\s+(\d{1,3}(?:,\d{3})+\.\d{2})\b"
 
     # Recherche le pattern spécifique dans le contenu
@@ -96,7 +119,8 @@ def extract_amount(content):
 
     ############## Second pattern ##############
     
-    # Nouveau pattern spécifique : cherche montant general si il y'en a un, il peut y'avoir ceci dans les factures avec plusieurs items.
+    # Nouveau pattern spécifique : cherche montant general si il y'en a un, il peut y'avoir ceci
+    # dans les factures avec plusieurs items.
     specific_pattern2 = (r"\b(?<!Sous-)"
                             r"(montant general|Total général :)"
                             r"(?!.*HT)(?!.*Taxes)\s+(\d(?:\s?\d)*([.,]\d{1,2})?)\s*€?")
@@ -104,12 +128,14 @@ def extract_amount(content):
     # Recherche le deuxième pattern spécifique dans le contenu
     match = re.search(specific_pattern2, content, re.IGNORECASE)
     if match:
-        # Si trouvé, retourne le montant en float après avoir remplacé les virgules par des points et supprimé les espaces inutiles
+        # Si trouvé, retourne le montant en float après avoir remplacé les virgules par des
+        # points et supprimé les espaces inutiles
         return clean_and_convert_to_float(match.group(2).replace(',', '.').replace(' ', '').strip())
 
     ############## Troisième pattern ##############
 
-    # Pattern général : Cherche des montants avec des espaces comme séparateurs de milliers, centaines, et cherche également les montants non séparés.
+    # Pattern général : Cherche des montants avec des espaces comme séparateurs de milliers,
+    # centaines, et cherche également les montants non séparés.
     general_pattern = (r"\b(?<!Sous-)"
                     r"(TOTAL NET|TOTAL NET |TOTAL NET :|TOTAL NET:|total du montant.*?"
                     r"|TOTAL|TOTAL |TOTAL :|TOTAL:"
@@ -128,7 +154,8 @@ def extract_amount(content):
                     r"|NET A PAYER|NET A PAYER |NET A PAYER :|NET A PAYER:"
                     r"|NET À PAYER|NET À PAYER |NET À PAYER :|NET À PAYER:"
                     r"|NET A PAYER TTC|NET A PAYER TTC |NET A PAYER TTC :|NET A PAYER TTC:|NET A PAYER TTC'|NET A PAYER TTC' |NET A PAYER TTC' :|NET A PAYER TTC':"
-                    r"|NET À PAYER TTC|NET À PAYER TTC |NET À PAYER TTC :|NET À PAYER TTC:|NET À PAYER TTC'|NET À PAYER TTC' |NET À PAYER TTC' :|NET À PAYER TTC':"
+                    r"|NET À PAYER TTC|NET À PAYER TTC |NET À PAYER TTC* |NET À PAYER TTC :|NET À "
+                       r"PAYER TTC:|NET À PAYER TTC'|NET À PAYER TTC' |NET À PAYER TTC' :|NET À PAYER TTC':"
                     r"|SOMME A PAYER|SOMME A PAYER |SOMME A PAYER :|SOMME A PAYER:|SOMME A PAYER'|SOMME A PAYER' |SOMME A PAYER' :|SOMME A PAYER':"
                     r"|SOMME À PAYER|SOMME À PAYER |SOMME À PAYER :|SOMME À PAYER:|SOMME À PAYER'|SOMME À PAYER' |SOMME À PAYER' :|SOMME À PAYER':"
                     r"|SOMME A PAYER TTC|SOMME A PAYER TTC |SOMME A PAYER TTC :|SOMME A PAYER TTC:|SOMME A PAYER TTC'|SOMME A PAYER TTC' |SOMME A PAYER TTC' :|SOMME A PAYER TTC':"
@@ -168,30 +195,29 @@ def clean_and_convert_to_float(amount_str):
 
 
 def extract_currency(content):
-    # Dictionnaires devises et correspondances ISO
+    # dictionnaires devises et correspondances ISO
     currency_map = {
-        r"\b(euros?|EUR)\b": "EUR",
-        r"€": "EUR",
-        r"\b(CHF|Francs? Suisses?|SFr\.)\b": "CHF",
-        r"\b(CAD|dollars? canadiens?|Dollar Canadien)\b": "CAD",
-        r"\b(XOF|francs? CFA BCEAO|Franc CFA|FCFA)\b": "XOF",
-        r"\b(XAF|francs? CFA BEAC)\b": "XAF",
+        # avec un \b cherche un mot, sans juste le contenu textuel
+        r"\b(EUR)\b": "EUR",
+        r"euros?|€": "EUR",
+        r"\b(SFr\.)\b": "CHF",
+        r"CHF|Francs? Suisses?": "CHF",
+        r"\b(CAD|dollars? canadiens?|Dollar Canadien|Quebec|Québec|Canada)\b": "CAD",
+        r"XOF|francs? CFA BCEAO|Franc CFA|FCFA|F CFA": "XOF",
+        r"XAF|francs? CFA BEAC": "XAF",
         r"\b(XPF|francs? Pacifique|Franc CFP)\b": "XPF",
-        r"\b(USD|\$|dollars?)\b": "USD"
+        r"XPF|francs? Pacifique|Franc CFP": "XPF",
+        r"USD|\$|dollars?": "USD"
     }
 
-    # Parcourt le dictionnaire pour trouver une correspondance
+    # parcourt le dictionnaire (clé/valeur) pour trouver une correspondance
     for nom_devise_long, code_devise in currency_map.items():
-        # Vérifie si le pattern correspond à une partie du texte
+        # vérifie si le pattern correspond à une partie du texte
         if re.search(nom_devise_long, content, re.IGNORECASE):
             return code_devise  # Retourne le code ISO de la devise trouvée
 
     return None # Retourne None si aucune devise n'est trouvée
 
-
-from datetime import datetime
-import os
-import shutil
 
 def save_document(filename, date_entry, amount_entry, expense_category, id_facture=None):
 
@@ -236,78 +262,43 @@ def save_document(filename, date_entry, amount_entry, expense_category, id_factu
 
 def extract_date(content):
 
-    # On accepte 29-04-2024 et 29/04/2024 et 29.04.2024 et 29 04 2024 et 29_04_2024
+    # accepte 29-04-2024 et 29/04/2024 et 29.04.2024 et 29 04 2024 et 29_04_2024
     match = re.search(r'\b(\d{1,2})[-_/. ](\d{1,2})[-_/. ](\d{4})\b', content)
 
     if match:
         # r'[]: on prend ce qui suit comme une raw string (pas d'échappement)
-        # On cherche tous les caractères qui appartiennent à '-', '_', '/', '.', ou un espace.
-        # On remplace les caractères par un tiret
-        # On renvoie la chaîne entière modifiée sous forme de string
+        # cherche tous les caractères qui appartiennent à '-', '_', '/', '.', ou un espace.
+        # remplace les caractères par un tiret
+        # renvoie la chaîne entière modifiée sous forme de string
         date_str = re.sub(r'[-_/. ]', '-', match.group(0))
+        return date_str  # retourne la date formatée directement
 
-        try:
-            # On convertit la str date_str au format DD-MM-YYYY en objet date
-            date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
-
-            # On formatte l'objet date en chaîne au format DD-MM-YYYY
-            date_str_format = date_obj.strftime('%d-%m-%Y')
-
-            # On retourne une str
-            return date_str_format
-
-        except ValueError:
-            pass  # Ignorer les dates qui ne correspondent pas au format attendu
-
-    # Pour les formats 29 avril 2024
-    match2 = re.search(r'\b(\d{1,2}) (\w+),? (\d{4})\b', content)
+    # pour les formats 29 avril 2024 / 29 avril, 2024 / 29 avr. 2024
+    match2 = re.search(r'\b(\d{1,2}) (\w+)\.?,? (\d{4})\b', content)
     if match2:
         try:
-            # Récupération du texte correspondant à la date
+            # récupération du texte correspondant à la date
             date_text = match2.group(0)
+            # convertit la date textuelle en français en objet DATE
             date_obj = dateparser.parse(date_text, languages=['fr'])
 
-            # On formatte l'objet date en chaîne au format DD-MM-YYYY
-            date_str_format = date_obj.strftime('%d-%m-%Y')
+            # vérifier si date_obj est None
+            if date_obj:
+                # on formatte l'objet date en chaîne au format DD-MM-YYYY (plus user friendly)
+                date_str_format = date_obj.strftime('%d-%m-%Y')
+                return date_str_format  # retourne un str
 
-            return date_str_format  # Retourne l'objet date
+        # en cas d'erreur, on passe
         except ValueError:
             pass
+    # si aucun match: on renvoie "None"
     else:
         return None
 
 
 def transf_datestr_obj(date_str):
     if date_str is not None:
-        # On convertit la str date_str au format DD-MM-YYYY en objet date
+        # convertit la str date_str au format DD-MM-YYYY en objet date
         date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
         return date_obj
-
-
-def lance_extract_dates(directory):
-    # On parcourt tous les fichiers du répertoire
-    for filename in os.listdir(directory):
-        # On veut traiter tous les fichiers terminant par "_text.txt"
-        if filename.endswith("_text.txt"):
-            # On ajoute le nom du fichier au chemin du répertoire "facture_integration"
-            filepath = os.path.join(directory, filename)
-            with open(filepath, 'r', encoding='utf-8') as file:
-               # On extrait le contenu du fichier text
-                content = file.read()
-                # On obtient la date en appelant la fonction extract_date
-                date = extract_date(content)
-                # On imprime le nom du fichier et la date trouvée
-                print(f"{filename}: {date}")
-                transf_datestr_obj(date)
-
-
-if __name__ == '__main__':
-    # On obtient le chemin du répertoire courant du fichier
-    repertoire_courant = os.getcwd()
-
-    # On s'intéresse au dossier factures_integration du répertoire courant
-    repertoire_test = os.path.join(repertoire_courant, 'factures_integration')
-
-    # On appelle la fonction
-    lance_extract_dates(repertoire_test)
 
