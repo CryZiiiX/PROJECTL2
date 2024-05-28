@@ -244,15 +244,15 @@ def frequence_toutes_langues_cibles(mois, annee, cursor):
     # récupère tous les résultats
     resultats = cursor.fetchall()
 
-    # construit une liste de tuples contenant seulement la langue cible et le pourcentage
-    # on saute le nombre de traductions
-    liste_langues_pourcentages = [(langue, float(pourcentage)) for langue, _, pourcentage in resultats]
+    # construire la chaîne de résultat
+    str_resultat = ', '.join(f"{langue}: {float(pourcentage):.2f}%"
+                                           for langue, _, pourcentage in resultats)
 
     # retourne la liste des tuples (langue, pourcentage)
-    if liste_langues_pourcentages is not None:
-        return liste_langues_pourcentages
+    if str_resultat is not None:
+        return str_resultat
     else:  # sinon retourne une liste vide
-        return []
+        return "Aucune donnée à afficher"
 
 
 # fonction pour calculer le montant cumulé des factures par catégorie sur une période donnée
@@ -306,7 +306,7 @@ def total_caracteres_mois(cursor):
 def afficher_informations_facture(cursor, id_facture):
     query = """
             SELECT id, date_ajout_BDD, date_facture, emetteur, montant_original, devise_originale, 
-                   montant_euros, categorie, nb_caracteres_traduits, langue_cible, est_test 
+                   montant_euros, categorie, nb_caracteres_traduits, langue_cible 
             FROM factures 
             WHERE id = %s;
             """
@@ -328,7 +328,6 @@ def afficher_informations_facture(cursor, id_facture):
             f"Catégorie: {result[7]}\n"
             f"Nombre de caractères traduits: {result[8]}\n"
             f"Langue cible de la traduction: {result[9]}\n"
-            f"Test (0=non, 1=oui): {result[10]}"
         )
 
     else:
@@ -396,11 +395,10 @@ def compte_conversion_devise_mois(cursor):
     # calculer le début du mois actuel
     debut_du_mois = datetime.date.today().replace(day=1)
 
-    # exécuter la requête pour obtenir les factures
     query = """
     SELECT COUNT(*)
     FROM factures
-    WHERE date_facture >= %s AND devise_originale != 'EUR';
+    WHERE date_ajout_BDD >= %s AND devise_originale != 'EUR';
     """
     cursor.execute(query, (debut_du_mois, ))
 
@@ -410,9 +408,6 @@ def compte_conversion_devise_mois(cursor):
         return int(resultat[0])
     else:
         return int(0)
-
-
-
 
 
 # fonction pour la catégorie de facture la plus fréquente

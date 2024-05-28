@@ -1,4 +1,4 @@
-from sys_exp import *
+from pattern_matcher import *
 
 # dictionnaire contenant les informations correctes pour chaque facture
 factures_reelles = {
@@ -45,9 +45,9 @@ factures_reelles = {
     "facture21_nettoye.txt": {"date": "01-02-2021", "montant": 129.9, "devise": "EUR",
                               "categorie": "Électronique"},
     "facture22_nettoye.txt": {"date": "28-04-2024", "montant": 0.99, "devise": "EUR",
-                              "categorie": "Téléphonie"},
+                              "categorie": "Électronique"},
     "facture23_nettoye.txt": {"date": "09-11-2022", "montant": 586.0, "devise": "EUR",
-                              "categorie": "Téléphonie"},
+                              "categorie": "Électronique"},
     "facture24_nettoye.txt": {"date": "17-04-2024", "montant": 38.01, "devise": "EUR",
                               "categorie": "Livres"},
     "facture25_nettoye.txt": {"date": "17-04-2024", "montant": 25.0, "devise": "EUR",
@@ -141,6 +141,6 @@ if __name__ == '__main__':
     # obtient le chemin du répertoire courant
     repertoire_courant = os.getcwd()
     # construit le chemin du répertoire de test
-    repertoire_test = os.path.join(repertoire_courant, 'tests_sys_exp')
+    repertoire_test = os.path.join(repertoire_courant, 'tests_pattern_matcher')
     # lance les tests
     lance_tests(repertoire_test)

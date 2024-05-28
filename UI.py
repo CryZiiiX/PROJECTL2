@@ -20,7 +20,7 @@ temp_folder = "factures_temporaire"  # nom du dossier de sortie
 if not os.path.exists(temp_folder):
     os.makedirs(temp_folder)  # crée le dossier s'il n'existe pas
 
-
+# Suppression du répertoire temporaire (utilisé lors de la sortie de l'UI)
 def cleanup():
     # Chemin du répertoire temporaire dans le répertoire courant
     temp_dir_path = os.path.join(os.getcwd(), "factures_temporaire")
@@ -39,7 +39,8 @@ def cleanup():
             messagebox.showerror("erreur de suppression",
                                  f"une erreur est survenue lors de la suppression du répertoire "
                                  f"'factures_temporaire': {e}")
-
+            
+# Lorsque l'UI est fermée
 def on_close():
     # Appelle la fonction de nettoyage
     cleanup()
@@ -68,14 +69,17 @@ Var_stockage_cate = ""
 # Variable qui sert a effacer la TAB3 si elle est activé ( je n'ai pas trouvé d'autre solution pour vérifier si la TAB 3 est activée ou non)
 global TAB3_etat
 TAB3_etat=0
+img_cv = None  # Image chargée dans opencv pour le traitement
 
 rectangles = []  # Liste des rectangles dessinés sur le canvas
 
-# Liste des catégories de dépenses          # DOIT ETRE EN LIGNE AVEC sys_exp fonction get_category
+# Liste des catégories de dépenses
+# DOIT ETRE EN LIGNE AVEC pattern_matcher fonction get_category
 liste_categorie_depense = ('Ameublement', 'Alimentaire', 'Assurances', 'Bar', 'Bricolage',
                            'Cosmétiques', 'Électronique', 'Frais bancaires', 'Livres', 'Logement',
-                           'Loisirs', 'Prêt-à-porter', 'Restauration', 'Santé', 'Service', 'Sport',
-                           'Téléphonie', 'Transport', 'Travaux', 'Autre')
+                           'Loisirs', 'Prêt-à-porter', 'Restauration', 'Santé', 'Service',
+                           'Services Publics', 'Sport', 'Téléphonie', 'Transport', 'Travaux',
+                           'Autre')
 
 # Nombre de types de dépenses
 length_expense_category = len(liste_categorie_depense)
@@ -100,7 +104,7 @@ for i in range(length_expense_category):
 
 # Initialise les variables globales pour chaque facture
 def initialisation():
-    global min_rescale_factor, rectangles, rect_id, img_cv, img_cv_path, base_name, \
+    global min_rescale_factor, rectangles, rect_id, img_cv, base_name, \
         file_name_without_extension,  \
         texte_nettoye, texte_corrige, file_path, file_path_display, file_extension,  \
         chemin_fichier_temp_traduit, count
@@ -112,7 +116,7 @@ def initialisation():
     while rectangles:
         clear_last_rectangle()
 
-    # Réinitialise les variables globales
+    # Réinitialise les variables globales (utilisé à chaque chargement d'une nouvelle facture)
     photo = None
     min_rescale_factor = 1  # Facteur de redimensionnement de l'image pour affichage dans l'UI
     w = 0  # Largeur de l'image
@@ -144,7 +148,7 @@ def initialisation():
     id_facture = 0  # Identifiant unique pour chaque facture
  #   flag_champs_oblig = 0  # teste si les variables obligatoires ont été renseignées
     flag_champs_obligatoires = [0, 0, 0, 0, 0]  # Indicateurs des champs obligatoires remplis
-    description_champs_obligatoires = [
+    description_champs_obligatoires = [         # Correspondance de chaque indice de la variable flag_champs_obligatoires
         'émetteur',
         'date de la facture',
         'montant en devise',
@@ -167,14 +171,14 @@ def initialisation():
     text_widget.delete(1.0, tk.END)
     language_entry.delete(0, "end")
 
-    # Active le bouton de validation de l'onglet 1:
+    # Active le bouton de validation des éléments-clés de l'onglet 2:
     button_validate_main_data.config(state="active")
 
     # Désactive l'onglet 2
     tab_control.tab(1, state='disabled')
 
 
-# Fonction pour afficher le mode d'emploi des rectangles
+# Fonction pour afficher le mode d'emploi des rectangles (lié à l'onglet 1)
 def manuel_utilisation_tab_1():
     global width_ui, height_ui
     # Ouvre une nouvelle fenêtre
@@ -198,11 +202,10 @@ def manuel_utilisation_tab_1():
     panel.pack()
 
 
-# Fonction pour importer une image depuis le système de fichiers
+# Fonction pour importer une image depuis le système de fichiers (onglet 1)
 def import_image():
     global img_cv, file_path, file_path_display, base_name, file_name_without_extension, file_extension, temp_folder, TAB3_etat
     print(TAB3_etat)
-    #, img_cv_path
     # Réinitialise les variables globales
     initialisation()
     # Ouvre une boîte de dialogue pour choisir un fichier
@@ -220,7 +223,7 @@ def import_image():
         if file_extension in [".jpg", ".jpeg", ".png", ".pdf"]:
             if file_extension == ".pdf":
                 file_path_display = convertitPdf(file_path)
-                # A sauvegarder dans temporaire
+                # Sauvegardé dans le dossier factures_temporaire
 
             image = cv2.imread(file_path_display)
             print("calcul d'angle")
@@ -231,15 +234,13 @@ def import_image():
                 # Redresse l'image
                 image = rotateImage(image, -1 * angle)
                 file_path_display = temp_folder + '/' + base_name + 'skewed' + '.jpg'
-                #new_filePath_angle = path + '/' + fileBaseName + 'skewed' + '.jpg'
-                #A sauvegarder dans temporaire
+                # Sauvegarder dans le dossier factures_temporaire
                 cv2.imwrite(file_path_display, image)
                 #file_path = new_filePath_angle
 
             #Affiche l'image sélectionnée
             show_image(file_path_display)
-            #Stocke le chemin complet de l'image
-            #img_cv_path = file_path
+
             #Charge l'image pour OpenCV (à l'échelle initiale)
             img_cv = cv2.imread(file_path_display)
 
@@ -254,7 +255,7 @@ def import_image():
             messagebox.showerror("Erreur", "Type d'image non valide")
 
 
-# Fonction qui convertit un pdf en image
+# Fonction qui convertit un pdf en image (onglet 1)
 def convertitPdf(filePath):
     global file_name_without_extension, temp_folder
     # Ouvre le fichier pdf
@@ -264,29 +265,24 @@ def convertitPdf(filePath):
     # Convertit la page 1 en une image
     pix = page.get_pixmap()
     # Détermine le chemin du fichier
-    #path, fileName = os.path.split(filePath)
-    #fileBaseName, fileExtension = os.path.splitext(fileName)
     new_path = temp_folder + '/' + file_name_without_extension + '.jpg'
-    # Sauvegarde l'image
+    # Sauvegarde l'image dans le dossier factures_temporaire
     pix.save(new_path)
     # Ferme le document
     doc.close()
     return new_path
 
 
-# Fonction pour afficher l'image sélectionnée dans le canvas de Tkinter
+# Fonction pour afficher l'image sélectionnée dans le canvas de Tkinter (onglet 1)
 def show_image(filePath):
- #   global output_path_img
     global photo, min_rescale_factor, w, h, w_r, h_r, max_width_image, max_height_image
     # Ouvre l'image avec PIL
     image = Image.open(filePath)
-    # save image path en vue de réutilisation ultérieure
- #   output_path_img = filePath
 
+    # Calcule la taille de l'image et la redimensionne si elle ne rentre pas sur le canvas
     w, h = image.size
-    if w > max_width_image or h > max_height_image:
+    if w > max_width_image or h > max_height_image:         # si l'image est plus grande que le canvas
         min_rescale_factor = min(max_width_image / w, max_height_image / h)
-
         # Redimensionne l'image pour affichage complet
         resized_image = image.resize((int(w * min_rescale_factor),
                                   int(h * min_rescale_factor)), resample=0)
@@ -301,23 +297,25 @@ def show_image(filePath):
     # Convertit l'image PIL en image Tkinter
     photo = ImageTk.PhotoImage(resized_image)
 
-    # Place l'image au point nord-ouest
+    # Place l'image au point nord-ouest des canvas de l'onglet 1 et 2
     canvas.create_image(0, 0, anchor=tk.NW, image=photo)
     canvas2.create_image(0, 0, anchor=tk.NW, image=photo)
-    #canvas_imported.create_image(0, 0, anchor=tk.NW, image=photo) importation de l'image dans TAB3 se charge uniquement a l'activation de la tab par l'utilisateur si il en a besoin ( économise la mémoire au chargement de l'application. )
+    #canvas_imported.create_image(0, 0, anchor=tk.NW, image=photo) 
+        #importation de l'image dans TAB3 se charge uniquement a l'activation de la tab par l'utilisateur si il en a besoin ( économise la mémoire au chargement de l'application. )
 
 
-# Fonction appelée lors du clic sur le canvas, pour commencer à dessiner un rectangle
+# Fonction appelée lors du clic sur le canvas, pour commencer à dessiner un rectangle  (onglet 1)
 def on_canvas_click(event):
     global start_x, start_y, rect_id
     # stocke la position initiale du clic
     start_x, start_y = event.x, event.y
+    # récupère l'ID du rectangle & commence à dessiner un rectangle 
     rect_id = canvas.create_rectangle(start_x, start_y, start_x + 1, start_y + 1, outline='red')
-    # récupère l'ID du rectangle & commence à dessiner un rectangle minuscule
+
 
 
 # Fonction appelée lors du glissement de la souris avec le bouton pressé,
-# pour redimensionner le rectangle
+# pour redimensionner le rectangle  (onglet 1)
 def on_canvas_drag(event):
     # position actuelle de la souris
     end_x, end_y = event.x, event.y
@@ -326,7 +324,7 @@ def on_canvas_drag(event):
 
 
 
-# Fonction appelée lors du relâchement du bouton de la souris, pour terminer le dessin du rectangle
+# Fonction appelée lors du relâchement du bouton de la souris, pour terminer le dessin du rectangle  (onglet 1)
 def on_canvas_release(event):
     global rect_id, rectangles
     # position finale de la souris
@@ -351,14 +349,16 @@ def clear_last_rectangle():
         # Efface le rectangle du canvas grâce à son ID objet
         canvas.delete(rect_to_delete[0])
 
-# Fonction pour valider tous les rectangles et extraire le texte des zones correspondantes
+
+# Fonction pour valider tous les rectangles et extraire le texte des zones correspondantes (onglet 1)
 def validate_all():
     global base_name, file_name_without_extension, texte_nettoye, img_cv
     global issuer, date, date_format_dd_mm_yyyy, amount, currency, amount_eur, temp_folder, \
         base_name, file_name_without_extension, min_rescale_factor, rectangles
     global expense_category, id_facture, flag_champs_oblig, w_r, h_r
 
-    # Facteur de mise à l'échelle pour le redimensionnement de l'image
+    # Facteur de mise à l'échelle pour l'agrandissement de l'image et des rectangles
+      # permettant une meilleure lecture par Tesseract
     scale_factor = 1.5
     if img_cv is None:
         messagebox.showerror("Erreur", "Aucune image chargée.")
@@ -368,19 +368,28 @@ def validate_all():
     if not rectangles:
         rectangles.append([2, (0, 0, w, h)])
 
-    # Eedimensionne l'image
+    # Redimensionne l'image
     resized_img = resize_image(img_cv, scale_factor)
 
     print(rectangles)
-    # Trie les rectangles par ordre vertical puis horizontal
+
+    # les coordonnées rectangles: ((x1, y1), (x2, y2)) : coin en haut à gauche et coin en bas à droite
+    # x[1] = (x2, y2) / x[1][1] = y2 / x[1][0] = x2
+    # trie d'abord selon y2 plus petit (cad verticalement) et en cas =, selon x2 (horizontalement)
     sorted_rects = sorted(rectangles, key=lambda x: (x[1][1], x[1][0]))
 
     # Accueille le texte lu par Tesseract
     results = []
     for rect in sorted_rects:
-        if rect[1][0] <= w_r and rect[1][1] <= h_r:
+        # Vérifie que les rectangles sélectionnés ne sont pas hors de la facture (coin en haut à gauche x1 et y1)
+          # et que les rectangles sont suffisamment grands (x1 != x2 et y1 != y2)
+     #   print("Coordonnée 1 du rectangle x1: ", rect[1][0])
+     #   print("Coordonnée 2 du rectangle y1: ", rect[1][1])
+     #   print("Coordonnée 1 du rectangle x2: ", rect[1][2])
+     #   print("Coordonnée 1 du rectangle y2: ", rect[1][3])          
+        if rect[1][0] <= w_r and rect[1][1] <= h_r and rect[1][0] != rect[1][2] and rect[1][1] != rect[1][3]: 
             _, coords = rect
-            # Ajuste les coordonnées des rectangles
+            # ajuste les coordonnées des rectangles
             scaled_coords = adjust_and_validate_roi(coords, scale_factor / min_rescale_factor)
 
             x1, y1, x2, y2 = scaled_coords
@@ -392,8 +401,8 @@ def validate_all():
 
             results.append(text)
         else:
-            print("Les rectangles hors de la facture n'ont "
-                                           "pas été traités")    
+            print("Les rectangles hors de la facture et les rectangles"
+                                           " trop petits n'ont pas été traités")    
 
     full_text = "\n".join(results)
 
@@ -410,17 +419,15 @@ def validate_all():
 
     # Nettoyage du texte
     texte_nettoye = nettoyage_texte_txt(full_text)
-    print("La fonction nettoyage_texte dans openai_deepl doit être remodifiée. "                       # A SUPPRIMER + MODIFIER FICHIER openai_deepl
-          "Fonctionne actuellement avec fake")
 
     # Construit le nom du fichier de sortie pour écriture de la traduction dans un fichier
     output_file_name = f"{file_name_without_extension}_nettoye.txt"
     output_path = os.path.join(temp_folder, output_file_name)
 
     # Ecrit le fichier dans le dossier temporaire
-    ecrire_dans_fichier(output_path, texte_nettoye, "nettoye")
+    ecrire_dans_fichier(output_path, texte_nettoye)
 
-    # Identification automatique des éléments-clé de la facture via le système expert
+    # Identification automatique des éléments-clés de la facture via le pattern matcher
     issuer = ''  # Emetteur de la facture (à compléter par l'utilisateur)
     issuer_label.set(issuer)
 
@@ -428,7 +435,7 @@ def validate_all():
     date = transf_datestr_obj(date_format_dd_mm_yyyy)  # Date au format objet (yyyy_mm_dd)
     date_label.set(date_format_dd_mm_yyyy)
 
-    amount = extract_amount(texte_nettoye)  # Montant en devise
+    amount = "{0:.2f}".format(extract_amount(texte_nettoye))  # Montant en devise
     print("montant: ", amount)
     amount_label.set(amount)
 
@@ -442,7 +449,8 @@ def validate_all():
     switch_to_next_tab()            # Passe à l'onglet 2 pour validation des données par l'utilisateur
 
 
-# Fonction D'application du système expert et de validation des données principales par l'utilisateur
+# Fonction d'application du pattern matcher et de validation des données principales par
+# l'utilisateur (onglet 2)
 def validate_main_data():
     global issuer, date, date_format_dd_mm_yyyy, amount, currency, fx_rate, amount_eur, \
         expense_category
@@ -456,7 +464,6 @@ def validate_main_data():
     # Si l'utilisateur a entré l'émetteur (obligatoire)
     if issuer_entry.get():
         issuer = issuer_entry.get()
-
     # Si l'émetteur n'est pas renseigné
     elif issuer_label.get() is None or issuer_label.get() == "":
         flag_champs_obligatoires[0] = 0
@@ -473,7 +480,6 @@ def validate_main_data():
     # Si l'utilisateur a entré le montant total
     if amount_entry.get():
         amount = amount_entry.get()
-
     # Si le montant total n'est pas renseigné
     elif amount_label.get() == 0 or amount_label.get() == "":
         flag_champs_obligatoires[2] = 0
@@ -487,7 +493,6 @@ def validate_main_data():
                                 "La devise de cette facture n'est pas disponible, "
                                 "veuillez contacter l'administrateur")
             flag_champs_obligatoires[3] = 0
-
     # Si la devise n'est pas renseignée
     elif (currency_label.get() is None or currency_label.get() == "" or currency_label.get()
           not in liste_devises[:-1]):
@@ -496,24 +501,26 @@ def validate_main_data():
     # Si l'utilisateur a entré la catégorie de dépense
     if expense_category_entry.get():
         expense_category = expense_category_entry.get()
-
     # Si la catégorie de dépense n'est pas renseignée ou inconnue
     elif expense_category_label.get() is None or expense_category_label.get() == "" or \
             expense_category_label.get() == "Inconnu":
         flag_champs_obligatoires[4] = 0
 
-    print(flag_champs_obligatoires)
+    print("Flags des champs obligatoires: ", flag_champs_obligatoires)
+
     # Ajout de la facture dans la base de données
     # Si tous les éléments-clé ont été renseignés
     if flag_champs_obligatoires == [1, 1, 1, 1, 1]:
         # Calcule montant facture en EUR si libellée dans une autre devise
         if currency != 'EUR':
             # Maj du nb d'appel de l'API pour les devises (stockée dans var globale "count")
-            appel_compte_conversion_devise()
+            # Récupère la connexion et le curseur
+            connection, cursor = connect_to_db()
+            count=compte_conversion_devise_mois(cursor)
             if count < 500:
-                amount_eur = convertir_devises(amount, currency, 'EUR')                       # A REACTIVER
-                #print(count, "Fonction convertir_devise actuellement désactivée")               # A RETIRER
-                #amount_eur = amount * 2                                                       # A RETIRER
+                amount_eur = "{0:.2f}".format(convertir_devises(amount, currency, 'EUR'))     # A DESACTIVER POUR BLOQUER L'UTILISATION DE L'API DEVISE
+                #print(count, "Fonction convertir_devise actuellement désactivée")             # A REACTIVER POUR BLOQUER L'UTILISATION DE L'API DEVISE
+                #amount_eur = "{0:.2f}".format(amount)                                         # A REACTIVER POUR BLOQUER L'UTILISATION DE L'API DEVISE
             else:
                 messagebox.showinfo("Limite atteinte", "Le nombre de conversions mensuelles"
                                                        " a été atteint.")
@@ -536,7 +543,7 @@ def validate_main_data():
             # Enregistre la nouvelle facture
             id_facture = enregistrer_facture(connection, cursor, date, issuer, amount, currency,
                                              amount_eur,
-                                             expense_category, 1)
+                                             expense_category, 0)
             # Ferme la connexion et le curseur
             fermeture_bdd(connection, cursor)
             print("Identifiant de la facture entrée dans la base de donnée: ", id_facture)
@@ -551,7 +558,7 @@ def validate_main_data():
             # Active le bouton de demande si traduction souhaitée
             button_view_text.config(state="active")
 
-    # S'il manque des éléments-clé de la facture
+    # S'il manque des éléments-clé de la facture, émet un message à l'utilisateur
     else:
         amount_eur_confirmed.set(0)
         text_message_box = "\n"
@@ -562,35 +569,7 @@ def validate_main_data():
                                       f"suivants:{text_message_box}")
 
 
-def appel_compte_conversion_devise():
-    global count
-    # Obtenir la date actuelle du PC
-    # (Sert à récupérer la date pour faire fonctionner la récupération du nombre d'appels
-    # Fait dans le mois à API devise.)
-    date_PC = datetime.datetime.now()
-    current_month = date_PC.month
-    current_year = date_PC.year
-
-    # Dictionnaire pour mois pour changer le format de la date a traiter.
-    mois_dict = {
-        1: "janvier", 2: "février", 3: "mars", 4: "avril", 5: "mai",
-        6: "juin", 7: "juillet", 8: "août", 9: "septembre",
-        10: "octobre", 11: "novembre", 12: "décembre"
-    }
-    current_month_name = mois_dict[current_month]
-
-    # Connexion à la BDD pour récupérer le curseur
-    connection, cursor = connect_to_db()
-    if connection is None or cursor is None:
-        print("Failed to connect to database")
-        return
-
-    # Maj variable count qui garde trace du nb de conversion pour le mois.
-    count = compte_conversion_devise(current_month_name, current_year, cursor)
-
-    return count
-
-
+# Fonction d'affichage du texte de la facture après que l'utilisateur a confirmé qu'il souhaite une traduction
 def want_translation():
     global texte_nettoye
     if texte_nettoye and texte_nettoye != "":
@@ -601,9 +580,8 @@ def want_translation():
         button_validate_text.config(state="active")
 
 
-# Donction de validation du texte par l'utilisateur
+# Fonction de validation du texte par l'utilisateur
 def validate_text_for_translation():
- #   global output_path_img
     global expense_category, id_facture, date, amount
     global temp_folder, file_name_without_extension, texte_corrige
     texte_corrige = text_widget.get(1.0, tk.END)
@@ -612,7 +590,7 @@ def validate_text_for_translation():
     output_file_name = f"{file_name_without_extension}_corrige.txt"
     output_path = os.path.join(temp_folder, output_file_name)  # chemin complet du fichier de sortie
     # Ecrit le fichier dans le dossier temporaire
-    ecrire_dans_fichier(output_path, texte_corrige, "corrige")
+    ecrire_dans_fichier(output_path, texte_corrige)
 
     button_validate_text.config(state="disabled")  # Désactive le bouton de validation du texte
     button_view_text.config(state="disabled")  # Désactive le bouton de visualisation du texte
@@ -624,52 +602,55 @@ def validate_text_for_translation():
 def translate():
     global file_name_without_extension, id_facture, date, amount, expense_category, \
         language, texte_corrige, chemin_fichier_temp_traduit
-    #    output_file_translation, output_file_name_translation
     if language_entry.get():
         language = language_entry.get()
 
         # Traduction du texte et enregistrement des paramètres de traduction dans la base de données
         texte_traduit = traduction_maj_bdd(texte_corrige, language, id_facture)
-        #print(                                                                                      # A SUPPRIMER + MODIFIER FICHIER openai_deepl
+        #print(                                                                                      # A REACTIVER POUR BLOQUER L'UTILISATION DE L'API DEEPL + MODIFIER FICHIER openai_deepl
         #    "La fonction traduction_maj_bdd dans openai_deepl doit être remodifiée. "
         #    "Fonctionne actuellement avec fake")
 
         # Construit le nom du fichier de sortie pour écriture de la traduction dans un fichier
         output_file_name = f"{file_name_without_extension}_translation.txt"
         chemin_fichier_temp_traduit = os.path.join(temp_folder, output_file_name)  # Construit le chemin complet du fichier de sortie
+
         # Ecrit le fichier dans le dossier temporaire et dans le dossier trie
-        ecrire_dans_fichier(chemin_fichier_temp_traduit, texte_traduit, "traduit")      # Ecriture dans dossier temporaire
+        ecrire_dans_fichier(chemin_fichier_temp_traduit, texte_traduit)      # Ecriture dans dossier temporaire
         save_document(chemin_fichier_temp_traduit, date, amount, expense_category, id_facture)   # Ecriture dans dossier trie
   #      messagebox.showinfo("Information", f"Le fichier traduit a été sauvegardé")  # Affiche une boîte de dialogue
+        return 1
     else:
         # Affiche une boîte de dialogue
         messagebox.showinfo("Erreur", f"Veuillez entrer la langue vers laquelle traduire")
+        return 0
         
 
 
 # Fonction pour activer un onglet spécifique
 def activate_tab(idx):
     tab_control.tab(idx, state='normal')  #0/1/2/3/4 TAB1=0 ect...
-    print("Onglet Traduction activé")
+    print("Onglet activé : ", idx+1)
 
 
 # Fonction pour désactiver un onglet spécifique au démarrage
 def deactivate_tab(tab):
     # Désactive l'onglet au démarrage
     tab_control.tab(tab, state='disabled') #0/1/2/3/4 TAB1=0 ect...
-    print("Onglet Traduction désactivé")
+    print("Onglet désactivé: ", tab+1)
 
-
+# Lance l'onglet de traduction
 def translate_activate():
-    translate() # Lance la traduction
-    activate_tab(2) # Donne accès a l'utilisateur a la TAB3
-    setup_tab3(chemin_fichier_temp_traduit) # Charge la TAB3 si l'utilisateur en a vraiment besoin
-    switch_to_next_tab() # Emmène l'utilisateur directement a la TAB 3
+    if translate() == 1: # Lance la traduction
+        activate_tab(2) # Donne accès a l'utilisateur a la TAB3
+        setup_tab3(chemin_fichier_temp_traduit) # Charge la TAB3 si l'utilisateur en a vraiment besoin
+        switch_to_next_tab() # Emmène l'utilisateur directement a la TAB 3
 
 # Sert a vider tout les widgets de la TAB (#0/1/2/3/4 TAB1=0 ect...)
 def empty_tab(tab):
     global TAB3_etat
-    TAB3_etat=0 #Reset l'état de la fenêtre pour éviter l'appel d'une fonction vidant la tab3 a chaque clique sur le bouton import image.
+    TAB3_etat=0 #Reset l'état de la fenêtre pour éviter l'appel d'une fonction vidant la tab3
+    # a chaque clique sur le bouton import image.
     print("Suppression des widgets de la TAB3")
     for widget in tab.winfo_children(): # Récupère tout les widgets de la TAB selectionné
         widget.destroy()    # Détruit les widgets
@@ -686,17 +667,17 @@ def save_text():
     texte_traduit_confirme = text_widget2.get("1.0", tk.END)
 
     # Ecrit le fichier dans le dossier temporaire et dans le dossier trie
-    ecrire_dans_fichier(output_path, texte_traduit_confirme, "traduit confirmé")
+    ecrire_dans_fichier(output_path, texte_traduit_confirme)
     save_document(output_path, date, amount, expense_category, id_facture)
 
     # Affichage de la confirmation de sauvegarde
-    # messagebox.showinfo("Sauvegarde", "Le texte a été sauvegardé avec succès.") #Test pour le developpeur
+    messagebox.showinfo("Information", f"Le texte a été sauvegardé avec succès")
 
 # ***********************************************************************************************************************************
 
 # *** FONCTIONS LIÉES AUX ONGLETS 4 ET 5 (COMPTABILITÉ ET STATISTIQUES) *****
 
-# initialise les variables globales pour l'onglet comptabilité
+# Initialise les variables globales et nettoie l'onglet comptabilité (parties de gauche et du milieu, qui dépendent d'une période entrée par l'utilisateur)
 def initialisation_acc():
     global accounting_month, accounting_year, previous_accounting_year, somme_montant_cat_year_n, \
         somme_montant_cat_year_n_1
@@ -713,6 +694,30 @@ def initialisation_acc():
     # Active / désactive les boutons:
     button_category_detail.config(state="disabled")
         # Désactive le bouton pour obtenir le détail d'une catégorie de dépenses
+
+# Initialise les variables globales et nettoie l'onglet comptabilité complètement
+def initialisation_acc_full():
+    global length_expense_category
+
+    # Efface le contenu des champs de l'UI et réinitialise les variables globales partie comptabilité sur une période:
+    accounting_month_entry.delete(0, "end")         # remet à zéro le menu déroulant
+    accounting_year_entry.delete(0, "end")         # remet à zéro le menu déroulant
+
+    label_month_var.set("")                     # efface le contenu des étiquettes mois et année
+    label_year_n_var.set("")
+    label_year_n_1_var.set("")
+
+    for i in range(length_expense_category):        # remet les montants à zéro
+        somme_montant_cat_year_n[i].set(0) 
+        somme_montant_cat_year_n_1[i].set(0)
+    total_year_n.set(0)
+    total_year_n_1.set(0)
+
+    initialisation_acc()                        # remet à zéro le reste des informations
+
+    # Efface le contenu des champs de l'UI partie facture individuelle:
+    invoice_id_acc.delete(0, "end")
+    text_widget_details_facture.delete(1.0, tk.END)
 
 
 # Fonction de comptabilité (visualisation des montants par catégorie pour une période donnée)
@@ -885,7 +890,6 @@ def display_invoice():
                 print(f"Une erreur est survenue lors de la lecture du fichier: {e}")
                 messagebox.showinfo("Erreur", f"Une erreur est survenue lors "
                                               f"de la lecture du fichier")
-                # Affiche une boîte de dialogue
         else:
             messagebox.showinfo("Erreur", f"La facture n'a pas été trouvée")
     else:
@@ -927,22 +931,23 @@ def display_invoice_translation():
                     file_path_trie_indiv = os.path.join(path_trie, name)
                     found_invoice_translation_flag = 1
 
+        # Si la traduction a été localisée, , ouvre une nouvelle fenêtre dans l'UI pour l'afficher
         if found_invoice_translation_flag == 1:
-            tab_display_invoice_translation = tk.Toplevel(root)
             # Ouvre une nouvelle fenêtre
+            tab_display_invoice_translation = tk.Toplevel(root)
             size_ui = str(width_ui) + 'x' + str(height_ui)
-            tab_display_invoice_translation.geometry(size_ui)
             # Dimension de la fenêtre
-            tab_display_invoice_translation.title("Traduction de la facture")
+            tab_display_invoice_translation.geometry(size_ui)
             # Titre de la fenêtre
-
+            tab_display_invoice_translation.title("Traduction de la facture")
+            # Information sur le numéro de la facture traduite
             (label_facture_traduction := tk.Label(tab_display_invoice_translation,
                                                   text="Traduction de la facture no")
              ).grid(row=1, column=1, padx=(450, 0), pady=10)
             id_facture_invoice_translation = tk.DoubleVar(value=id_facture_acc)
             (tk.Label(tab_display_invoice_translation, textvariable=id_facture_invoice_translation)
              .grid(row=1, column=2, padx=0, pady=10))
-
+            # Widget de texte pour afficher la traduction
             text_widget_invoice_tranlation = tk.Text(tab_display_invoice_translation, wrap="word",
                                                      width=70, height=55)
             text_widget_invoice_tranlation.grid(row=2, column=1, columnspan=2, padx=(450, 0), pady=10)
@@ -962,10 +967,8 @@ def display_invoice_translation():
                 print(f"Une erreur est survenue lors de la lecture du fichier: {e}")
                 messagebox.showinfo("Erreur", f"Une erreur est survenue lors de "
                                               f"la lecture du fichier")
-                # Affiche une boîte de dialogue
         else:
             messagebox.showinfo("Erreur", f"La traduction de la facture n'a pas été trouvée")
-            # Affiche une boîte de dialogue
     else:
         messagebox.showinfo("Erreur",
                             f"Veuillez entrer l'identifiant de la facture")
@@ -1015,6 +1018,7 @@ def delete_invoice():
                         file_path_trie_indiv = os.path.join(path_trie, name)
                         found_invoice_flag = 1
 
+            # Si la facture a été trouvée
             if found_invoice_flag == 1:
                 try:
                     # Efface le fichier
@@ -1028,11 +1032,8 @@ def delete_invoice():
                     print(f"Une erreur est survenue lors de la lecture du fichier: {e}")
                     messagebox.showinfo("Erreur", f"Une erreur est survenue lors de "
                                               f"la lecture du fichier")
-                    # Affiche une boîte de dialogue
             else:
                 messagebox.showinfo("Erreur", f"La facture n'a pas été trouvée dans le dossier trie")
-                # Affiche une boîte de dialogue
-
 
             # Trouve le fichier traduction de la facture dans le dossier trie pour le supprimer
             file_path_trie_indiv = None
@@ -1042,6 +1043,7 @@ def delete_invoice():
                         file_path_trie_indiv = os.path.join(path_trie, name)
                         found_invoice_translation_flag = 1
 
+            # Si le fichier de traduction a été trouvé
             if found_invoice_translation_flag == 1:
                 try:
                     # Efface le fichier
@@ -1055,30 +1057,31 @@ def delete_invoice():
                     print(f"Une erreur est survenue lors de la lecture du fichier: {e}")
                     messagebox.showinfo("Erreur", f"Une erreur est survenue lors de "
                                               f"la lecture du fichier")
-                    # Affiche une boîte de dialogue
             else:
                 messagebox.showinfo("Erreur", f"La traduction de la facture n'a pas été trouvée dans le dossier trie")
-                # Affiche une boîte de dialogue
 
-        else:
-            messagebox.showinfo("Erreur",
+    else:
+        messagebox.showinfo("Erreur",
                             f"Veuillez entrer l'identifiant de la facture")
 
-# Chargement de la table à chaque clic sur l'onglet, afin d'actualiser l'information affiché dans l'onglet.
-def on_tab_selected(event):
+# Chargement de la table à chaque clic sur l'onglet, afin d'actualiser l'information affichée dans l'onglet.
+def tab_selected(event):
+    # Récupère le nom de l'onglet sélectionné
     selected_tab = event.widget.tab(event.widget.index("current"), "text")
     if selected_tab == "Statistiques":
-        # Détruit tous les widgets dans l'onglet 5.
+        # Détruit tous les widgets dans l'onglet 5 pour éviter les duplications
         for widget in tab5.winfo_children():
             widget.destroy()
+        # Reconfigure l'onglet 5 avec les widgets mis à jour
         setup_tab5()
 
 
 # Met à jour les résultats en fonction de la catégorie, du mois et de l'année sélectionnés
 def update_result(category, selected_month, selected_year, result_label, selected_category=None):
     global Var_stockage_cate
-    #print(Var_stockage_cate) #Print qui sert au deceloppeur pour connaître le non de la categorie au moment de l'actualisation, servait a resoudre des problèmes.
-     # Vérifie si une année valide est sélectionnée, sinon affiche un message d'erreur
+    #print(Var_stockage_cate) # Print utilisé pour le développement afin de vérifier la catégorie sélectionnée
+
+    # Vérifie si une année valide est sélectionnée, sinon affiche un message d'erreur
     if selected_year == "Choisir une année":
         result_label.config(text="Veuillez sélectionner une année valide.")
         return
@@ -1096,19 +1099,21 @@ def update_result(category, selected_month, selected_year, result_label, selecte
     else:
         selected_category = Var_stockage_cate
 
-    # Détermine le mois et l'année à utiliser dans la requête, en prenant en compte le cas où "Choisir un mois" est sélectionné
+    # Détermine le mois et l'année à utiliser dans la requête
     mois = None if selected_month == "Choisir un mois" else selected_month
     annee = selected_year
 
     # Mappe chaque catégorie à une fonction SQL correspondante
     function_map = {
-        "Nombre de factures traitées :": lambda: bdd_SQL.nb_facture_traitees(mois, annee, cursor),
+        "Nombre de factures :": lambda: bdd_SQL.nb_facture_traitees(mois, annee, cursor),
         "Catégorie la plus fréquente :": lambda: bdd_SQL.categorie_plus_frequente(mois, annee, cursor),
-        "Nombre de factures traduites :": lambda: bdd_SQL.nb_factures_traduites(mois, annee, cursor),
-        "Prix moyen des factures traitées :": lambda: str(bdd_SQL.prix_moyen_facture(mois, annee, cursor)) + " €",
-        "Prix moyen d'une facture d'une catégorie précise :": lambda: str(bdd_SQL.prix_moyen_facture_categorie(mois, annee, selected_category, cursor)) + " €",
+        "Nombre de factures traduites (selon date d'émission) :": lambda:
+        bdd_SQL.nb_factures_traduites(mois,
+                                                                                        annee, cursor),
         "Langues de traduction les plus fréquentes :": lambda: bdd_SQL.frequence_toutes_langues_cibles(mois, annee,cursor),
-        "Nombre de changement de devises au cours du mois (API) :": lambda: bdd_SQL.nb_caracteres_traduits(mois, annee, cursor)
+        "Nombre de caractères traduits (API) :": lambda: bdd_SQL.nb_caracteres_traduits(mois, annee, cursor),
+        "Prix moyen des factures :": lambda: str(bdd_SQL.prix_moyen_facture(mois, annee, cursor)) + " €",
+        "Prix moyen d'une facture d'une catégorie précise :": lambda: str(bdd_SQL.prix_moyen_facture_categorie(mois, annee, selected_category, cursor)) + " €",
     }
 
     # Exécute la fonction correspondante à la catégorie sélectionnée et met à jour le label des résultats
@@ -1122,29 +1127,36 @@ def update_result(category, selected_month, selected_year, result_label, selecte
         result_label.config(text="Fonction non définie pour cette catégorie.")
 
 
-def on_year_selection_changed(event, year_cb, month_cb, category, result_label):
-    """ajuste l'état de la combobox mois et met à jour les résultats en fonction de l'année sélectionnée."""
+# Fonction appelée lorsque la sélection de l'année change
+def year_selection_changed(event, year_cb, month_cb, category, result_label):
+    #Ajuste l'état de la combobox mois et met à jour les résultats en fonction de l'année sélectionnée.
     selected_year = year_cb.get()
     # Réinitialise la sélection du mois à "Choisir un mois" chaque fois que la sélection de l'année change
     month_cb.set("Choisir un mois")
 
     if selected_year == "Depuis toujours":
+        # Désactive le combobox des mois si "Depuis toujours" est sélectionné
         month_cb.config(state="disabled")
-        update_result(category, None, "toutes", result_label)      # Utilise 'toutes' si aucune année spécifique n'est fourni
+        # Met à jour le résultat pour toutes les années
+        update_result(category, None, "toutes", result_label)
     else:
+        # Active le combobox des mois
         month_cb.config(state="readonly")
-        update_result(category, None, selected_year, result_label) # # Met à jour le résultat lorsque l'année change
+        # Met à jour le résultat en fonction de l'année sélectionnée
+        update_result(category, None, selected_year, result_label)
         
 
 
-def on_month_selection_changed(event, year_cb, month_cb, category, result_label):
+# Fonction appelée lorsque la sélection du mois change
+def month_selection_changed(event, year_cb, month_cb, category, result_label):
+    # Récupère l'année et le mois sélectionnés
     selected_year = year_cb.get()
     selected_month = month_cb.get()
     # Vérifie si l'année est sélectionnée avant de mettre à jour les résultats
     if selected_year == "Choisir une année":
         result_label.config(text="Veuillez sélectionner une année.")
         return
-    # Appelle toujours update_result pour permettre l'utilisation de mois = None
+    # Met à jour le résultat en fonction du mois et de l'année sélectionnés
     update_result(category, selected_month, selected_year, result_label)
 
 # ***********************************************************************************************************************************
@@ -1170,8 +1182,9 @@ size_ui = str(width_ui) + 'x' + str(height_ui)
 root.geometry(size_ui)  # Dimension de la fenêtre
 root.title("ProjectL2")  # Titre de la fenêtre
 
-
 tab_control = ttk.Notebook(root, style='Custom.TNotebook')
+
+# Création des 5 onglets de l'UI
 tab1 = ttk.Frame(tab_control)
 tab2 = ttk.Frame(tab_control)
 tab3 = ttk.Frame(tab_control)
@@ -1315,7 +1328,7 @@ button_validate_text.config(state="disabled")  # désactive le bouton de validat
 
 
 # Modification du bouton traduire pour faire en sorte d'activer le bouton à la sélection de la langue
-def on_language_select(event):
+def language_select(event):
     # Active le bouton lorsque une langue est sélectionnée
     button_translate.config(state="normal")
 
@@ -1327,7 +1340,7 @@ label_langues.grid(row=16, column=0, padx=padding_x_0, pady=padding_y)
 liste_langues = ('anglais', 'espagnol', 'allemand')
 language_entry = ttk.Combobox(right_frame2, values=liste_langues, style="Light.TCombobox")
 language_entry.grid(row=16, column=1, padx=padding_x_1, pady=padding_y)
-language_entry.bind("<<ComboboxSelected>>", on_language_select)
+language_entry.bind("<<ComboboxSelected>>", language_select)
 
 button_translate = tk.Button(right_frame2, text="Traduire", command=translate_activate)
 button_translate.grid(row=17, column=1, padx=padding_x_1, pady=padding_y_fin)
@@ -1339,29 +1352,22 @@ def setup_tab3(fichier_txt=None):
     """configure le tab3 avec un affichage de fichier texte optionnel."""
     global canvas_imported, text_widget2, photo, max_width_image, max_height_image, TAB3_etat
 
-    style = ttk.Style()
-    style.theme_use('clam')  # Utilisation d'un thème plus moderne
-
-    # Configuration des boutons avec un effet de gradient ou d'ombre pour une apparence plus sophistiquée
-    style.configure("TButton", font=('Helvetica', 10, 'bold'),
-                    background="#333333", foreground="#ffffff", borderwidth=1)
-    style.map("TButton",
-              background=[('active', '#666666'), ('pressed', 'black')],
-              foreground=[('pressed', '#ffffff'), ('active', '#ffffff')],
-              relief=[('pressed', 'sunken'), ('!pressed', 'raised')])
-
     # Canvas pour afficher les images
     canvas_imported = tk.Canvas(tab3, width=max_width_image, height=max_height_image,bg="#333333")
     canvas_imported.grid(row=0, column=0, padx=10, pady=10, rowspan=5)  # Augmentation du rowspan pour tous les éléments
     canvas_imported.create_image(0, 0, anchor=tk.NW, image=photo)
 
     # Etiquette de traduction placée tout en haut
-    translation_label = tk.Label(tab3, text="Traduction: Éditez le texte ci-dessous pour corriger.",background="#333333", foreground="white")
-    translation_label.grid(row=1, column=1, padx=(0, 0), pady=(0, 700))  # Réduction du padding pour un meilleur alignement
+    translation_label = tk.Label(tab3, text="La traduction proposée a été enregistrée.",background="#333333", foreground="white")
+    translation_label.grid(row=1, column=1, padx=(0, 0), pady=(0, 775))  # Réduction du padding pour un meilleur alignement
+
+    # Etiquette de traduction placée tout en haut
+    translation_label = tk.Label(tab3, text="Vous pouvez effectuer des modifications si nécessaire.",background="#333333", foreground="white")
+    translation_label.grid(row=1, column=1, padx=(0, 0), pady=(0, 725))  # Réduction du padding pour un meilleur alignement
 
     # Zone de texte avec une barre de défilement pour l'édition du texte
     txt_scroll_frame = tk.Frame(tab3)
-    txt_scroll_frame.grid(row=1, column=1, padx=0, pady=50, sticky="nsew")
+    txt_scroll_frame.grid(row=1, column=1, padx=0, pady=100, sticky="nsew")
     text_widget2 = tk.Text(txt_scroll_frame, height=30, width=80)
     scrollbar = tk.Scrollbar(txt_scroll_frame, command=text_widget2.yview)
     text_widget2.config(yscrollcommand=scrollbar.set)
@@ -1370,12 +1376,12 @@ def setup_tab3(fichier_txt=None):
 
     # Etiquette pour les instructions de sauvegarde du fichier placée en dessous de la zone de texte
     correction_label = tk.Label(tab3,
-                                text="Enregistrer le fichier dans la langue traduite et trié par Type/Date/Montant.",background="#333333", foreground="white",)
-    correction_label.grid(row=1, column=1, padx=(0, 0), pady=(700, 0))  # Ajustement du padding
+                                text="Une fois les modifications faites, vous pouvez enregistrer et cela écrasera la traduction proposée initialement.",background="#333333", foreground="white",)
+    correction_label.grid(row=1, column=1, padx=(0, 0), pady=(725, 0))  # Ajustement du padding
 
     # Bouton pour sauvegarder le texte, placé en dessous de l'étiquette de correction
-    save_text_button = tk.Button(tab3, text="Sauvegarder la traduction", command=save_text)
-    save_text_button.grid(row=2, column=1, padx=(0, 0), pady=(0, 0))  # Ajustement du padding
+    save_text_button = tk.Button(tab3, text="Sauvegarder la traduction modifiée.", command=save_text)
+    save_text_button.grid(row=1, column=1, padx=(0, 0), pady=(800, 0))  # Ajustement du padding
 
     # Charge le texte depuis un fichier si fourni
     if fichier_txt:
@@ -1384,7 +1390,6 @@ def setup_tab3(fichier_txt=None):
             text_widget2.insert(tk.END, text_content)
     
     TAB3_etat=TAB3_etat+1
-
 
 # Créer l'onglet "Comptabilité" (Onglet 4)
 image_frame = tk.Frame(tab4)
@@ -1457,28 +1462,28 @@ total_year_n_1 = tk.DoubleVar(value=None)
 label_sum_n_1.configure(font=(font['family'], font['size'], 'bold'))
 
 # Liste déroulante permettant de sélectionner une catégorie et bouton permettant d'afficher le détail de la catégorie sélectionnée
-tk.Label(tab4, text="Catégorie de dépense:", bg='#333333', fg='white').grid(row=4, column=3, padx=padding_x_acc, pady=5)
-(expense_category_entry_acc := ttk.Combobox(tab4, values=liste_categorie_depense, style="Light.TCombobox")).grid(row=5, column=3,
+tk.Label(tab4, text="Catégorie de dépense:", bg='#333333', fg='white').grid(row=2, column=3, padx=padding_x_acc, pady=5)
+(expense_category_entry_acc := ttk.Combobox(tab4, values=liste_categorie_depense, style="Light.TCombobox")).grid(row=4, column=3,
                                                                                         padx=padding_x_acc, pady=5)
 
 button_category_detail = tk.Button(tab4, text="Liste des factures", command=display_list_invoice)
-button_category_detail.grid(row=6, column=3, padx=padding_x_acc, pady=5)
+button_category_detail.grid(row=5, column=3, padx=padding_x_acc, pady=5)
 button_category_detail.config(state="disabled")  # Désactive le bouton
 
-text_widget_acc = tk.Text(tab4, wrap="word", width=40, height=35)
-text_widget_acc.grid(row=7, column=3, rowspan=length_expense_category + 4 - 6, padx=padding_x_acc, pady=5)
+text_widget_acc = tk.Text(tab4, wrap="word", width=40, height=30)
+text_widget_acc.grid(row=6, column=3, rowspan=length_expense_category + 4 - 6, padx=padding_x_acc, pady=5)
 text_widget_acc.configure(font=(font['family'], font['size']))
 
-# Liste déroulante permettant d'entrer un identifiant de facture et bouton permettant d'afficher le détail de la facture
-tk.Label(tab4, text="ID de la facture:", bg='#333333', fg='white').grid(row=4, column=4, padx=padding_x_acc, pady=5)
+# Zone de texte permettant d'entrer un identifiant de facture et bouton permettant d'afficher le détail de la facture
+tk.Label(tab4, text="ID de la facture:", bg='#333333', fg='white').grid(row=3, column=4, padx=padding_x_acc, pady=5)
 invoice_id_entry = tk.IntVar(value=None)
-(invoice_id_acc := ttk.Entry(tab4, textvariable=invoice_id_entry)).grid(row=5, column=4, padx=padding_x_acc, pady=5)
+(invoice_id_acc := ttk.Entry(tab4, textvariable=invoice_id_entry)).grid(row=4, column=4, padx=padding_x_acc, pady=5)
 
 button_invoice_detail = tk.Button(tab4, text="Détails de la facture", command=display_details_invoice)
-button_invoice_detail.grid(row=6, column=4, padx=padding_x_acc, pady=5)
+button_invoice_detail.grid(row=5, column=4, padx=padding_x_acc, pady=5)
 
-text_widget_details_facture = tk.Text(tab4, wrap="word", width=40, height=35)
-text_widget_details_facture.grid(row=7, column=4, rowspan=length_expense_category + 4 - 6, padx=padding_x_acc, pady=5)
+text_widget_details_facture = tk.Text(tab4, wrap="word", width=40, height=30)
+text_widget_details_facture.grid(row=6, column=4, rowspan=length_expense_category + 4 - 6, padx=padding_x_acc, pady=5)
 text_widget_details_facture.configure(font=(font['family'], font['size']))
 
 # Bouton permettant d'afficher la facture dont l'identifiant a été entré
@@ -1493,15 +1498,19 @@ button_view_translation.grid(row=20, column=4, padx=padding_x_acc, pady=0)
 button_view_translation = tk.Button(tab4, text="Effacer la facture", command=delete_invoice)
 button_view_translation.grid(row=21, column=4, padx=padding_x_acc, pady=0)
 
+# Bouton permettant d'afficher la traduction de la facture dont l'identifiant a été entré
+button_view_translation = tk.Button(tab4, text="Réinitialiser la fenêtre", command=initialisation_acc_full)
+button_view_translation.grid(row=25, column=4, padx=padding_x_acc, pady=0)
 
 tab_control.pack(expand=1, fill='both')
 
 # Ajout de l'event binding, si on clique sur l'onglet 5 alors on actualise la tab
-tab_control.bind("<<NotebookTabChanged>>", on_tab_selected)
+tab_control.bind("<<NotebookTabChanged>>", tab_selected)
+
 
 def setup_tab5():
-    global tab5
-    global Var_stockage_cate
+    global tab5, count, Var_stockage_cate
+
     # Création d'un canvas et de deux barres de défilement dans 'tab5'
     canvas = tk.Canvas(tab5, bg="#333333")
     v_scrollbar = ttk.Scrollbar(tab5, orient="vertical", command=canvas.yview)
@@ -1522,18 +1531,21 @@ def setup_tab5():
     # Données pour les combobox
     months = ["Choisir un mois"] + ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
                                     "septembre", "octobre", "novembre", "décembre"]
-    years = ["Choisir une année", "Depuis toujours"] + [str(year) for year in range(2020, 2025)]
-    specific_categories = ["Choisir une catégorie", "Logement", "Transport", "Assurances", "Santé", "Ameublement",
-                           "Téléphonie", "Prêt-à-porter", "Alimentaire", "Frais bancaires", "Électronique",
-                           "Bricolage", "Restauration", "Service", "Loisirs", "Livres", "Sport", "Cosmétiques"]
+    years = ["Choisir une année", "Depuis toujours"] + [str(year) for year in range(2018, 2025)]
+
+    #Initialisation d'une liste avec "Choisir une catégorie" suivi de chaque catégorie de dépense généralisé
+    specific_categories = ["Choisir une catégorie"]  # Commence par ajouter "Choisir une catégorie" à la liste
+    for categorie in liste_categorie_depense:
+        specific_categories.append(categorie)  # Ajoute chaque catégorie à la liste
 
     # Configuration des widgets selon les catégories
     categories_left = [
-        "Nombre de factures traitées :", "Nombre de factures traduites :", "Nombre de caractères traduits (API) :",
-        "Nombre de changement de devises au cours du mois (API) :"
+        "Nombre de factures :", "Nombre de factures traduites (selon date d'émission) :",
+        "Nombre de caractères traduits (API) :",
+        "Nombre de conversions de devises effectuées ce mois-ci (API) :"
     ]
     categories_right = [
-        "Catégorie la plus fréquente :", "Langues de traduction les plus fréquentes :", "Prix moyen des factures traitées :",
+        "Catégorie la plus fréquente :", "Langues de traduction les plus fréquentes :", "Prix moyen des factures :",
         "Prix moyen d'une facture d'une catégorie précise :"
     ]
 
@@ -1557,6 +1569,9 @@ def setup_tab5():
             global Var_stockage_cate
             Var_stockage_cate = specific_category_combobox.get()
             result_label.config(text="Catégorie sélectionnée : " + Var_stockage_cate)
+            # Reset les choix de l'année a chaque changement de catégories.
+            year_combobox.set("Choisir une année")  # Texte par défaut dans la Combobox des années
+            month_combobox.set("Choisir un mois")  # Texte par défaut dans la Combobox des mois
 
         # Combobox spécifique pour "Prix moyen d'une facture d'une catégorie précise"
         if category == "Prix moyen d'une facture d'une catégorie précise :":
@@ -1571,8 +1586,12 @@ def setup_tab5():
         
 
         # Affichage dynamique du nombre de changement de devises en cours
-        if category == "Nombre de changement de devises au cours du mois (API) :":
-            appel_compte_conversion_devise()
+        if category == "Nombre de conversions de devises effectuées ce mois-ci (API) :":
+
+            #Connexion à la BDD pour récupérer le curseur
+            connection, cursor = connect_to_db()
+            count=compte_conversion_devise_mois(cursor)
+
             count_label = tk.Label(scrollable_frame, text=str(count), font=('Helvetica', 12), bg='#333333', fg='white')
             count_label.grid(row=row_offset * 4 + 1, column=column_offset, padx=200, pady=10, sticky="w")
 
@@ -1593,18 +1612,20 @@ def setup_tab5():
             # Liaisons pour la sélection de l'année et du mois.
             # Lambda permet d'actualiser dynamiquement l'interface utilisateur en réponse aux actions de l'utilisateur, comme la sélection d'un élément dans une Combobox.
             year_combobox.bind("<<ComboboxSelected>>",lambda event, cat=category, res=result_label, ycb=year_combobox,
-                                                      mcb=month_combobox: on_year_selection_changed(event, ycb,
+                                                      mcb=month_combobox: year_selection_changed(event, ycb,
                                                                                                     mcb, cat,
                                                                                                     res))
             month_combobox.bind("<<ComboboxSelected>>", lambda event, cat=category, res=result_label, ycb=year_combobox,
-                                                       mcb=month_combobox: on_month_selection_changed(event,
+                                                       mcb=month_combobox: month_selection_changed(event,
                                                                                                       ycb, mcb,
                                                                                                       cat, res))
             
 
+
 # Activation des fonctions pour lancer les règles de styles et désactiver l'onglet TAB3, et lancer les configurations de styles 'style_configure'
 deactivate_tab(2)
 style_configure()
+
 
 # Configure le gestionnaire de fermeture
 root.protocol("WM_DELETE_WINDOW", on_close)
