@@ -18,7 +18,7 @@ if not os.path.exists(sort_folder):
 
 def get_categorie(content):
     # Dictionnaire des règles avec expressions régulières pour chaque catégorie
-    # SI MODIFICATION, IL FAUT EGALEMENT MODIFIER liste_categorie_depense dans l'UI + TAB5 Maxime
+    # SI MODIFICATION, IL FAUT EGALEMENT MODIFIER la variable globale liste_categorie_depense dans l'UI
     categories = {
         'Alimentaire': r'\b(alimentaire|supermarché|Carrefour|ED|Casino|Lidl|Tesco|Aldi|Auchan|'
                        r'Monoprix|épicerie|nourriture|Costco|Intermarché|Leclerc|Franprix|'
@@ -88,13 +88,16 @@ def get_categorie(content):
     }
 
 
-    # Parcourir chaque catégorie pour trouver un match
+    # parcourir chaque catégorie pour trouver un match (unpack la clé + la valeur régex)
     for category, regex in categories.items():
+        # on cherche le réggex dans le contenu du texte
         match = re.search(regex, content, re.IGNORECASE)
+        # si on a trouvé un mot dans le texte qui correspond à l'expression régex
         if match:
-            return category, match.group()  # Retourne la catégorie et le mot qui a matché
+            # on renvoie la catégorie (+ le mot qui a permis l'association avec la cat pour tests)
+            return category, match.group()
 
-    # Si aucun match n'est trouvé, retourner "Autre"
+    # si aucun match n'est trouvé, renvoie la cat "Autre" et le mot "None"
     return 'Autre', None
 
 
@@ -185,17 +188,18 @@ def extract_amount(content):
 
 
 def clean_and_convert_to_float(amount_str):
-    # Vérifie s'il y a des points dans la chaîne
+    # vérifie s'il y a des points dans la chaîne
     if '.' in amount_str:
-        # Remplace tous les points par rien
-        # Sauf le dernier car on vérifie qu'il y a toujours un point qui suit
-        # Avant le traitement (?=.*\.)
+        # remplace tous les points par rien
+        # sauf le dernier car on vérifie qu'il y a toujours un point qui suit "\."
+        # avant le traitement (?=.*\.)
         amount_str = re.sub(r'\.(?=.*\.)', '', amount_str)
     return float(amount_str)
 
 
 def extract_currency(content):
     # dictionnaires devises et correspondances ISO
+    # noms longs en clé car sinon dupliqué
     currency_map = {
         # avec un \b cherche un mot, sans juste le contenu textuel
         r"\b(EUR)\b": "EUR",
@@ -214,9 +218,9 @@ def extract_currency(content):
     for nom_devise_long, code_devise in currency_map.items():
         # vérifie si le pattern correspond à une partie du texte
         if re.search(nom_devise_long, content, re.IGNORECASE):
-            return code_devise  # Retourne le code ISO de la devise trouvée
+            return code_devise  # retourne le code ISO de la devise trouvée
 
-    return None # Retourne None si aucune devise n'est trouvée
+    return None # retourne None si aucune devise n'est trouvée
 
 
 def save_document(filename, date_entry, amount_entry, expense_category, id_facture=None):
@@ -255,7 +259,7 @@ def save_document(filename, date_entry, amount_entry, expense_category, id_factu
 
     # Copie le fichier original vers le chemin de sauvegarde
     print(f"Fichier sauvegardé sous : {save_path}")
-
+    print("***************** SORT DE save_document***************")
     # Retourne le chemin du dossier de sauvegarde
     return directory
     
@@ -271,7 +275,7 @@ def extract_date(content):
         # remplace les caractères par un tiret
         # renvoie la chaîne entière modifiée sous forme de string
         date_str = re.sub(r'[-_/. ]', '-', match.group(0))
-        return date_str  # retourne la date formatée directement
+        return date_str  # retourne la date comme une str
 
     # pour les formats 29 avril 2024 / 29 avril, 2024 / 29 avr. 2024
     match2 = re.search(r'\b(\d{1,2}) (\w+)\.?,? (\d{4})\b', content)
@@ -284,7 +288,7 @@ def extract_date(content):
 
             # vérifier si date_obj est None
             if date_obj:
-                # on formatte l'objet date en chaîne au format DD-MM-YYYY (plus user friendly)
+                # on formatte l'objet date en chaîne au format DD-MM-YYYY (plus user friendly) strF
                 date_str_format = date_obj.strftime('%d-%m-%Y')
                 return date_str_format  # retourne un str
 
@@ -298,7 +302,13 @@ def extract_date(content):
 
 def transf_datestr_obj(date_str):
     if date_str is not None:
-        # convertit la str date_str au format DD-MM-YYYY en objet date
-        date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
-        return date_obj
+        try:
+            # convertit la str date_str au format DD-MM-YYYY en objet date (strP)
+            date_obj = datetime.strptime(date_str, '%d-%m-%Y').date()
+            return date_obj
+        except ValueError:
+            # retourne None si la date n'est pas dans le bon format
+            # ou si ça ne correspond pas à une date (ex: 77-04-2024)
+            return None
+    return None  # retourne None si date_str est None
 

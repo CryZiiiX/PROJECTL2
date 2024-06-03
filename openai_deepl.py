@@ -10,12 +10,14 @@ def nettoyage_texte_txt(texte):
     :return: Le texte corrigé.
     """
 
-    # si le texte est vide ou très court, on renvoie tel quel
+    # si le texte est vide (ne contient que des espaces) ou très court, on renvoie tel quel
     if not texte.strip() or len(texte) < 20:
         return texte
 
+    # création d'un client API à partir de la clé de config.py
     client = OpenAI(api_key=OPENAI_API_KEY)
 
+    # création d'une requête de complétion à l'API de OpenAI
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -35,23 +37,18 @@ def nettoyage_texte_txt(texte):
         ]
     )
 
+    # extraction du texte corrigé de la réponse de l'API
     reponse = completion.choices[0].message.content
 
+    # on renvoie le texte corrigé
     return reponse
 
-
-def corriger_texte_fake(texte):
-    """
-    Pour ne pas épuiser les crédits openAI
-    """
-    reponse = texte
-    return reponse
 
 def traduction_maj_bdd(texte_a_trad, langue_cible, id_facture):
     """
-    Traduit le texte et l'enregistre dans la base de données.
+    traduit le texte et enregistre les infos dans la base de données
     Arguments :
-        texte_a_trad (str): texte à traduire. [à voir si on utilise plutôt un fichier]
+        texte_a_trad (str): texte à traduire.
         langue_cible (str): langue dans laquelle traduire.
         id_facture (int): ID de la facture associée.
     """
@@ -69,7 +66,7 @@ def traduction_maj_bdd(texte_a_trad, langue_cible, id_facture):
     # ferme la connexion et le curseur
     fermeture_bdd(connection, cursor)
 
-    # on renvoie le texte traduit (à voir ce qu'on en fait, dans un fichier?)
+    # on renvoie le texte traduit
     return texte_traduit
 
 
@@ -101,7 +98,7 @@ def traduire_texte(texte, langue_cible):
     else:
         return "Caractères épuisés pour le mois."
 
-    # configuration de l'API avec la clé et création d'une instance translator
+    # configuration de l'API avec la clé et création d'un translator
     translator = deepl.Translator(cle_API)
 
     # on choisit la bonne option de langue à passer à l'API selon notre choix de langue_cible
@@ -122,41 +119,11 @@ def traduire_texte(texte, langue_cible):
         translator.close()  # on ferme l'instance translator
 
 
-def traduire_texte_fake(texte, langue_cible):
-    """
-    Utilise l'API DeepL pour traduire le texte.
-    Arguments :
-        texte (str): texte à traduire.
-        langue_cible (str): langue cible de la traduction.
-    Retourne :
-        str: texte traduit ou un message d'erreur si les quotas sont dépassés.
-    """
-    # on récupère la connexion et le curseur
-    connection, cursor = connect_to_db()
-
-    # on récupère le nombre de caractères traduit durant le mois calendaire
-    caracteres_trad_mois = total_caracteres_mois(cursor)
-    print(f"Il y a eu {caracteres_trad_mois} caractères traduits ce mois.")
-
-    # ferme la connexion et le curseur
-    fermeture_bdd(connection, cursor)
-
-    # selon le nombre de caractères traduits, on choisit notre clé d'API
-    if caracteres_trad_mois < 495000:
-        cle_API = DEEPL_API_KEY1
-    elif caracteres_trad_mois < 995000:
-        cle_API = DEEPL_API_KEY2
-    else:
-        return "Caractères épuisés pour le mois."
-
-    return texte  # on renvoie le texte d'origine
-
-
 def ecrire_dans_fichier(nom_fichier, texte):
     """
-    Fonction pour écrire le texte traduit dans un fichier
+    Fonction pour écrire le texte dans un fichier
     :param nom_fichier: Le nom du fichier de sortie.
-    :param texte_traduit: Le texte traduit.
+    :param texte: Le texte à écrire dans le fichier.
     :return: None
     """
     with open(nom_fichier, 'w', encoding='utf-8') as fichier:
