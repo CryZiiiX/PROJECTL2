@@ -17,8 +17,10 @@ def adjust_and_validate_roi(roi, scale_factor):
     # retourne les coordonnées ajustées
     return x1, y1, x2, y2
 
-# Fonctions pour redresser une image penchée
+# Fonctions pour redresser une image penchée, sur la base de la source ci-dessous, modifiées pour les besoins de l'application
 #Source: https://becominghuman.ai/how-to-automatically-deskew-straighten-a-text-image-using-opencv-a0c30aed83df
+
+
 # Détection de l'angle
 def getSkewAngle(cvImage) -> float:
     # Prépare l'image, la copie, la convertit en "grayscale", applique blur et threshold
@@ -38,7 +40,7 @@ def getSkewAngle(cvImage) -> float:
     contours, hierarchy = cv2.findContours(dilate, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     # Trie les contours par taille en ordre décroissant
     contours = sorted(contours, key = cv2.contourArea, reverse = True)
-    # Pour chaque contours, dessine un rectangle en vert sur l'image (seulement pour la visualisation)
+    # Pour chaque contour, dessine un rectangle en vert sur l'image (seulement pour la visualisation)
  #   for c in contours:
  #       rect = cv2.boundingRect(c)
  #       x,y,w,h = rect

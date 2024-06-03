@@ -34,7 +34,6 @@ def enregistrer_facture(connection, cursor, date_facture, emetteur, montant_orig
         date_ajout_BDD DATE DEFAULT (CURRENT_DATE()),
         date_facture DATE,
         emetteur VARCHAR(255), 
-        -- 14 chiffres au total donc 2 après la virgule 
         montant_original FLOAT, 
         devise_originale VARCHAR(255),
         montant_euros FLOAT,
@@ -56,12 +55,8 @@ def enregistrer_facture(connection, cursor, date_facture, emetteur, montant_orig
     # récupération de l'identifiant de la dernière facture insérée
     id_facture = cursor.lastrowid
 
-    # vérifie si l'ID récupéré est valide (non None)
-    if id_facture is not None:
-        return id_facture
-    else:
-        # si ID n'est récupéré
-        return None
+    # renvoie l'ID de la dernière facture ou None si invalide
+    return id_facture
 
 
 # fonction qui ajoute les données relatives à la traduction pour une facture déjà enregistrée
@@ -156,36 +151,6 @@ def prix_moyen_facture_categorie(mois, annee, categorie, cursor):
         return float(0)
 
 
-# fonction pour calculer le prix moyende tous les types de facture sur une période donnée
-def prix_moyen_toutes_categories(mois, annee, cursor):
-    # détermination de la date de début de la période
-    debut, fin = temporalite(mois, annee)
-
-    # requête pour obtenir le prix moyen d'un type de facture sur une période donnée
-    query = """
-    -- calcule la moyenne des montants des factures et récupère les catégories
-    SELECT categorie, CAST(AVG(montant_euros) AS FLOAT) AS prix_moyen
-    -- à partir de la table 'factures'
-    FROM factures 
-    -- seulement à partir d'une date donnée et pour une catégorie donnée
-    WHERE date_facture >= %s AND date_facture <= %s 
-    -- on regroupe les factures par catégories 
-    GROUP BY categorie
-    """
-
-    # lance la requête et passe la période donnée et la catégorie en arguments
-    cursor.execute(query, (debut, fin,))
-
-    # récupère tous les résultats sous forme de liste de tuples (categorie, prix_moyen)
-    resultats = cursor.fetchall()
-
-    # retourne la liste des tuples (categorie, prix)
-    if resultats is not None:
-        return resultats
-    else:  # sinon retourne une liste vide
-        return []
-
-
 # fonction pour compter le nombre total de caractères traduits
 def nb_caracteres_traduits(mois, annee, cursor):
     # détermination de la date de début de la période
@@ -193,7 +158,7 @@ def nb_caracteres_traduits(mois, annee, cursor):
 
     # requête pour obtenir le nombre total de caractères traduits sur une période donnée
     query = """
-    -- calcule la somme totale des caractères traduits (par une addition)
+    -- additionne tous les caractères traduits 
     SELECT SUM(nb_caracteres_traduits) 
     -- à partir de la table 'factures'
     FROM factures 
@@ -220,7 +185,8 @@ def frequence_toutes_langues_cibles(mois, annee, cursor):
     # détermination de la date de début de la période
     debut, fin = temporalite(mois, annee)
 
-    # requête pour obtenir la fréquence en % d'utilisation de chaque langue cible pour les traductions sur une période donnée
+    # requête pour obtenir la fréquence en % d'utilisation de chaque langue cible pour les
+    # traductions sur une période donnée
     query = """
     -- sélectionne la colonne 'langue_cible' pour afficher la langue des traductions
     SELECT langue_cible,    
@@ -244,14 +210,14 @@ def frequence_toutes_langues_cibles(mois, annee, cursor):
     # récupère tous les résultats
     resultats = cursor.fetchall()
 
-    # construire la chaîne de résultat
+    # construire la chaîne de résultat (on ignore le nb de traductions)
     str_resultat = ', '.join(f"{langue}: {float(pourcentage):.2f}%"
                                            for langue, _, pourcentage in resultats)
 
-    # retourne la liste des tuples (langue, pourcentage)
+    # retourne le résultat
     if str_resultat is not None:
         return str_resultat
-    else:  # sinon retourne une liste vide
+    else:  # sinon un message
         return "Aucune donnée à afficher"
 
 
@@ -281,7 +247,7 @@ def somme_factures_categorie(mois, annee, categorie, cursor):
         return float(0)
 
 
-# fonction pour récupérer le nombre total de caractères traduits ce mois-vci
+# fonction pour récupérer le nombre total de caractères traduits ce mois-ci
 def total_caracteres_mois(cursor):
     # Calculer le début du mois actuel
     debut_du_mois = datetime.date.today().replace(day=1)
@@ -331,7 +297,7 @@ def afficher_informations_facture(cursor, id_facture):
         )
 
     else:
-        resultat_formatte = "Aucune facture trouvée avec l' identifiant facture " + id_facture
+        resultat_formatte = f"Aucune facture trouvée avec l'identifiant facture {id_facture}"
 
     return resultat_formatte
 
@@ -353,6 +319,7 @@ def details_factures_categorie(categorie, mois, annee, cursor):
 
     # vérifier si des résultats ont été trouvés
     if resultats:
+        # on crée une str vide pour commencer
         resultat_formatte = ""
         for resultat in resultats:
             resultat_formatte += (
@@ -367,28 +334,6 @@ def details_factures_categorie(categorie, mois, annee, cursor):
     else:
         resultat_formatte = "Aucune facture trouvée pour cette période."
         return resultat_formatte
-
-
-def compte_conversion_devise(mois, annee, cursor):
-    # détermination de la date de début et de fin de la période
-    debut, fin = temporalite(mois, annee)
-
-    # exécuter la requête pour obtenir les factures
-    query = """
-    SELECT COUNT(*)
-    FROM factures
-    WHERE date_facture >= %s AND date_facture <= %s AND devise_originale != 'EUR';
-    """
-    cursor.execute(query, (debut, fin))
-
-    # récupérer les résultats
-    resultat = cursor.fetchone()
-    if resultat is not None and resultat[0] is not None:
-        return int(resultat[0])
-    else:
-        return int(0)
-
-
 
 def compte_conversion_devise_mois(cursor):
 
@@ -417,16 +362,18 @@ def categorie_plus_frequente(mois, annee, cursor):
 
     # requête pour obtenir la catégorie la plus fréquente pour une période donnée
     query = """
-    -- sélectionne la colonne 'categorie' pour grouper les résultats par catégorie
+    -- sélectionne la colonne 'categorie' 
     SELECT categorie,
-     -- compte le nombre total de factures par catégorie
+     -- compte le nombre de factures par catégorie
     COUNT(*) AS nombre_categorie
     FROM factures
     -- seulement pour une période donnée
     WHERE date_facture >= %s AND date_facture <= %s
     -- groupe les résultats par catégorie pour effectuer les calculs
     GROUP BY categorie;
+    -- classe du plus grand au plus petit nombre
     ORDER BY nombre_categorie DESC
+    -- on prend le plus grand nombre (ne gère pas les égalités)
     LIMIT 1;
     """
 
@@ -437,8 +384,7 @@ def categorie_plus_frequente(mois, annee, cursor):
     resultat = cursor.fetchone()
     if resultat is not None and resultat[0] is not None:
         cursor.fetchall()
-        # retourne la première colonne qui contient le
-        # nom de la catégorie
+        # accède à la première valeur du tuple qui correspond au nom de la cat la + fréquente
         return resultat[0]
     else:
         return None
@@ -479,21 +425,18 @@ def afficher_categorie_facture(cursor, id_facture):
             WHERE id = %s;
             """
 
-    # Exécution de la requête avec l'ID de la facture
+    # exécution de la requête avec l'ID de la facture
     cursor.execute(query, (id_facture,))
 
-    # Récupération des résultats
-    result = cursor.fetchone()
+    # récupération du résultat
+    resultat = cursor.fetchone()
 
-    if result is not None and len(result) > 0:
-        resultat_formatte = ''
-        for item in result:
-            resultat_formatte = resultat_formatte + item
-
+    if resultat is not None and resultat[0] is not None and len(resultat) > 0:
+        return resultat[0]
     else:
-        resultat_formatte = "Aucune facture trouvée avec cet ID."
+        return "Aucune facture trouvée avec cet ID."
 
-    return resultat_formatte
+
 
 # affiche la date d'une facture
 def afficher_date_facture(cursor, id_facture):
@@ -508,13 +451,11 @@ def afficher_date_facture(cursor, id_facture):
 
     # Récupération des résultats
     result = cursor.fetchone()
-    if result is not None and len(result) > 0:
-        resultat_formatte = result[0]
-
+    if result is not None and result[0] is not None and len(result) > 0:
+        return result[0]
     else:
-        resultat_formatte = "Aucune facture trouvée avec cet ID."
+        return "Aucune facture trouvée avec cet ID."
 
-    return resultat_formatte
 
 
 
@@ -539,8 +480,8 @@ def supprimer_facture(id_a_supp, cursor, connection):
 def temporalite(mois, annee):
     # gestion des cas pour toutes les factures depuis le début
     if mois == None and annee == "toutes":
-        # début de la période donnée: 1er janvier 2020
-        date_debut = datetime.date.today().replace(day=1, month=1, year=2020)
+        # début de la période donnée: 1er janvier 2018
+        date_debut = datetime.date.today().replace(day=1, month=1, year=2018)
         date_fin = datetime.date.today()
         return date_debut, date_fin
 
@@ -553,22 +494,30 @@ def temporalite(mois, annee):
 
     # gestion des cas pour un mois spécifique dans une année
     elif mois and annee != "toutes" and annee:
+        # dico pour convertir nom mois en numéro
         mois_dict = {
             "janvier": 1, "février": 2, "mars": 3, "avril": 4, "mai": 5,
             "juin": 6, "juillet": 7, "août": 8, "septembre": 9,
             "octobre": 10, "novembre": 11, "décembre": 12
         }
 
+        # vérifie si le mois existe dans le dico
         if mois in mois_dict:
+            # convertit l'année en entier
             annee_int = int(annee)
+            # convertir le mois en entier
             mois_int = mois_dict[mois]
+            # crée un objet date pour le premier jour du mois
             date_debut = datetime.date(annee_int, mois_int, 1)
+            # obtient le dernier jour du mois avec monthrange (indice 0 = jour semaine)
             dernier_jour = calendar.monthrange(annee_int, mois_int)[1]
+            # crée objet date avec la fin du mois
             date_fin = datetime.date(annee_int, mois_int, dernier_jour)
+            # retourne la date de début et la date de fin du mois
             return date_debut, date_fin
 
     # erreur si mois spécifique mais toutes les années
-    elif mois != None and annee == "toutes":
+    elif (mois != None or mois != "tous") and annee == "toutes":
         print("Veuillez sélectionner une année")
 
     # erreur si autre chose
